@@ -441,26 +441,30 @@ export class MoviesService {
       }
 
       // ====== UPDATE MOVIE ======
-      await movie.update(
-        {
-          title: data.title,
-          slug: data.slug,
-          rating: data.rating,
-          source: data.source,
-          resolution: data.resolution,
-          yearOfRelease: data.yearOfRelease,
-          synopsis: data.synopsis,
-          duration,
-          budget: data.budget,
-          worldwideGross: data.worldwideGross,
-          trailerUrl: data.trailerUrl,
-          fileId: data.fileId,
-          videoId: data.videoId,
-          ageRatingId: data.ageRatingId,
-          countryId: data.countryId,
-        },
-        { transaction },
-      );
+
+      const updatePayload: any = {
+        title: data.title,
+        rating: data.rating,
+        source: data.source,
+        resolution: data.resolution,
+        yearOfRelease: data.yearOfRelease,
+        synopsis: data.synopsis,
+        duration,
+        budget: data.budget,
+        worldwideGross: data.worldwideGross,
+        trailerUrl: data.trailerUrl,
+        fileId: data.fileId,
+        videoId: data.videoId,
+        ageRatingId: data.ageRatingId,
+        countryId: data.countryId,
+      };
+
+      // hanya set slug kalau benar-benar berubah
+      if (data.slug && data.slug !== movie.dataValues.slug) {
+        updatePayload.slug = data.slug;
+      }
+
+      await movie.update(updatePayload, { transaction });
 
       // ====== UPDATE SUBTITLES ======
       if (data.subtitles) {
