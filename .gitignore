@@ -3,6 +3,7 @@
 /files
 /node_modules
 /build
+/src/configs/database.config.ts
 
 # Logs
 logs
