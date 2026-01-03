@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package upload;
+
+service UploadService {
+  rpc uploadChunks (stream UploadChunkRequest) returns (stream UploadResponse);
+}
+
+message UploadChunkRequest {
+  string uploadId = 1;
+  string folder = 2;
+  int32 chunkIndex = 3;
+  int32 totalChunks = 4;
+  bytes data = 5;
+  string originalName = 6;
+  int32 size = 7;
+  string mimeType = 8;
+}
+
+message UploadResponse {
+  bool success = 1;
+  string message = 2;
+  string id = 3;
+  string uploadId = 4;
+  string fileName = 5;
+  string mimeType = 6;
+  string url = 7;
+  string stage = 8;
+  double progress = 9;
+}

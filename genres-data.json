@@ -1,0 +1,149 @@
+[
+    {
+        "name": "Action"
+    },
+    {
+        "name": "Adventure"
+    },
+    {
+        "name": "Animation"
+    },
+    {
+        "name": "Biography"
+    },
+    {
+        "name": "Comedy"
+    },
+    {
+        "name": "Crime"
+    },
+    {
+        "name": "Documentary"
+    },
+    {
+        "name": "Drama"
+    },
+    {
+        "name": "Family"
+    },
+    {
+        "name": "Fantasy"
+    },
+    {
+        "name": "Film-Noir"
+    },
+    {
+        "name": "History"
+    },
+    {
+        "name": "Horror"
+    },
+    {
+        "name": "Music"
+    },
+    {
+        "name": "Musical"
+    },
+    {
+        "name": "Mystery"
+    },
+    {
+        "name": "Romance"
+    },
+    {
+        "name": "Sci-Fi"
+    },
+    {
+        "name": "Sport"
+    },
+    {
+        "name": "Thriller"
+    },
+    {
+        "name": "War"
+    },
+    {
+        "name": "Western"
+    },
+    {
+        "name": "Adult"
+    },
+    {
+        "name": "Short"
+    },
+    {
+        "name": "News"
+    },
+    {
+        "name": "Reality-TV"
+    },
+    {
+        "name": "Talk-Show"
+    },
+    {
+        "name": "Game-Show"
+    },
+    {
+        "name": "Experimental"
+    },
+    {
+        "name": "Action-Adventure"
+    },
+    {
+        "name": "Comedy-Drama"
+    },
+    {
+        "name": "Crime-Drama"
+    },
+    {
+        "name": "Fantasy-Adventure"
+    },
+    {
+        "name": "Horror-Comedy"
+    },
+    {
+        "name": "Romantic-Comedy"
+    },
+    {
+        "name": "Musical-Comedy"
+    },
+    {
+        "name": "Psychological-Thriller"
+    },
+    {
+        "name": "Political-Thriller"
+    },
+    {
+        "name": "Superhero"
+    },
+    {
+        "name": "Martial-Arts"
+    },
+    {
+        "name": "Disaster"
+    },
+    {
+        "name": "Spy"
+    },
+    {
+        "name": "Western-Drama"
+    },
+    {
+        "name": "Teen"
+    },
+    {
+        "name": "Coming-of-Age"
+    },
+    {
+        "name": "Family-Adventure"
+    },
+    {
+        "name": "Historical-Drama"
+    },
+    {
+        "name": "Epic"
+    },
+    {
+        "name": "Action-Comedy"
+    }
+]

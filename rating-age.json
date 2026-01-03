@@ -1,0 +1,37 @@
+[
+    {
+        "code": "SU",
+        "name": "Semua Umur",
+        "category": "Family / Kids"
+    },
+    {
+        "code": "A",
+        "name": "Anak-anak",
+        "category": "Children"
+    },
+    {
+        "code": "BO",
+        "name": "Bimbingan Orang Tua",
+        "category": "Parental Guidance"
+    },
+    {
+        "code": "R13",
+        "name": "Remaja 13+",
+        "category": "Teen / Remaja"
+    },
+    {
+        "code": "D17",
+        "name": "Dewasa 17+",
+        "category": "Young Adult"
+    },
+    {
+        "code": "D21",
+        "name": "Dewasa 21+",
+        "category": "Mature / Adult"
+    },
+    {
+        "code": "NR",
+        "name": "Tidak Diklasifikasikan / Unrated",
+        "category": "Not Rated"
+    }
+]
