@@ -106,12 +106,20 @@ export class MoviesService {
         )
         .reduce((acc, val) => acc + val, 0);
 
-      if (isNaN(totalSeconds)) {
-        throw new Error('Unable to parse duration from m3u8 file');
+      if (!isFinite(totalSeconds) || totalSeconds <= 0) {
+        throw new Error('Invalid or empty EXTINF duration');
       }
 
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = Math.round(totalSeconds % 60);
+      const rounded = Math.round(totalSeconds);
+      const hours = Math.floor(rounded / 3600);
+      const minutes = Math.floor((rounded % 3600) / 60);
+      const seconds = rounded % 60;
+
+      if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds
+          .toString()
+          .padStart(2, '0')}`;
+      }
       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     } catch (err) {
       console.log('error get duration', err);
