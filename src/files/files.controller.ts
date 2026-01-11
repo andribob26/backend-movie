@@ -14,13 +14,14 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as fileType from 'file-type';
 
-@Controller('api/files')
+@Controller('files')
 export class FilesController {
   @Get('*')
   async getFile(@Req() req: Request, @Res() res: Response) {
     const { w: width, h: height } = req.query;
 
-    const urlPath = req.url.replace(/^\/files\//, '').split('?')[0];
+    // Jika backend pakai globalPrefix /api
+    const urlPath = req.url.replace(/^\/api\/files\//, '').split('?')[0];
 
     const baseDir = path.resolve(process.cwd(), 'files');
     const filePath = path.join(baseDir, urlPath);
