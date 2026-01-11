@@ -306,7 +306,7 @@ export class FilesService {
 
           const baseUrl =
             this.configService.get('BASE_URL') || 'http://localhost:3000';
-          const fileUrl = `${baseUrl}/files/${folder}/${fileName}`;
+          const fileUrl = `${baseUrl}/api/files/${folder}/${fileName}`;
 
           observer.next({
             success: true,
