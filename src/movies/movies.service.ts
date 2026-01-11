@@ -537,7 +537,7 @@ export class MoviesService {
 
         // hanya ambil fileId yang valid (bukan null)
         const oldFileIds = oldSubtitles
-          .map((s) => s.fileId)
+          .map((s) => s.dataValues.fileId)
           .filter(Boolean) as string[];
 
         console.log(oldSubtitles, 'oldSubtitles');
