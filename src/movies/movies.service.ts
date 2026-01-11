@@ -499,8 +499,7 @@ export class MoviesService {
         const m3u8Key = await this.findFirstPlaylist(video.dataValues.prefix);
         if (!m3u8Key) throw new Error('No HLS playlist found');
 
-        console.log(m3u8Key, "m3u8Key m3u8Key m3u8Key m3u8Key");
-        
+        console.log(m3u8Key, 'm3u8Key m3u8Key m3u8Key m3u8Key');
 
         duration = await this.getDurationFromS3(this.bucket, m3u8Key);
         console.log('Duration:', duration);
@@ -540,6 +539,8 @@ export class MoviesService {
         const oldFileIds = oldSubtitles
           .map((s) => s.fileId)
           .filter(Boolean) as string[];
+
+        console.log(oldFileIds, 'oldFileIds');
 
         if (oldFileIds.length > 0) {
           await this.fileModel.update(
