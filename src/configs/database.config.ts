@@ -13,6 +13,6 @@ export const getSequelizeConfig = (
   //   },
   // },
   autoLoadModels: true, // otomatis load semua models yang diimport
-  synchronize: true, // auto-create tabel (dev only)
+  synchronize: false, // auto-create tabel (dev only)
   // logging: true, // bisa diaktifkan jika mau debug
 });
