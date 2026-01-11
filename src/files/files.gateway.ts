@@ -12,7 +12,7 @@ import { FilesService } from './files.service';
 @WebSocketGateway({
   namespace: '/file',
   cors: { origin: '*' },
-  transports: ['websocket'],
+  transports: ['polling', 'websocket'], // ✅ WAJIB
 })
 export class FilesGateway {
   private chunkSubjects = new Map<
