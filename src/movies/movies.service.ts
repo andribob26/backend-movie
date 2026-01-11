@@ -10,7 +10,13 @@ import { Model, Sequelize } from 'sequelize-typescript';
 import { File } from 'src/entities/file.entity';
 import { InferCreationAttributes, Op } from 'sequelize';
 import { AgeRating } from 'src/entities/age-rating.entity';
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  GetObjectCommand,
+  HeadObjectCommand,
+  ListObjectsV2Command,
+  ListObjectsV2CommandOutput,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 import { ConfigService } from '@nestjs/config';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
@@ -125,6 +131,46 @@ export class MoviesService {
       console.log('error get duration', err);
       return null;
     }
+  }
+
+  private async findFirstPlaylist(prefix: string): Promise<string | null> {
+    let continuationToken: string | undefined = undefined;
+
+    do {
+      const command = new ListObjectsV2Command({
+        Bucket: this.bucket,
+        Prefix: `${prefix}/`,
+        ContinuationToken: continuationToken,
+      });
+
+      const response = (await this.s3.send(
+        command,
+      )) as ListObjectsV2CommandOutput;
+
+      if (response.Contents) {
+        // filter yang cuma index.m3u8
+        const playlist = response.Contents.find((obj: any) =>
+          obj.Key?.endsWith('index.m3u8'),
+        );
+        if (playlist?.Key) {
+          // pastikan file benar-benar ada (opsional)
+          try {
+            await this.s3.send(
+              new HeadObjectCommand({ Bucket: this.bucket, Key: playlist.Key }),
+            );
+            return playlist.Key;
+          } catch (err) {
+            // skip jika file somehow tidak ada
+          }
+        }
+      }
+
+      continuationToken = response.IsTruncated
+        ? response.NextContinuationToken
+        : undefined;
+    } while (continuationToken);
+
+    return null; // tidak ada playlist sama sekali
   }
 
   private queryOpt = ({ where = {}, orderField = '', orderDirection = '' }) => {
@@ -290,8 +336,14 @@ export class MoviesService {
         });
         if (!video) throw new NotFoundException('Video not found');
 
-        const m3u8Key = `${video.dataValues.prefix}/240p/index.m3u8`;
+        const m3u8Key = await this.findFirstPlaylist(video.dataValues.prefix);
+        if (!m3u8Key) throw new Error('No HLS playlist found');
+
         duration = await this.getDurationFromS3(this.bucket, m3u8Key);
+        console.log('Duration:', duration);
+
+        // const m3u8Key = `${video.dataValues.prefix}/240p/index.m3u8`;
+        // duration = await this.getDurationFromS3(this.bucket, m3u8Key);
       }
 
       // ====== CREATE MOVIE ======
@@ -444,8 +496,14 @@ export class MoviesService {
         });
         if (!video) throw new NotFoundException('Video not found');
 
-        const m3u8Key = `${video.dataValues.prefix}/240p/index.m3u8`;
+        const m3u8Key = await this.findFirstPlaylist(video.dataValues.prefix);
+        if (!m3u8Key) throw new Error('No HLS playlist found');
+
+        console.log(m3u8Key, "m3u8Key m3u8Key m3u8Key m3u8Key");
+        
+
         duration = await this.getDurationFromS3(this.bucket, m3u8Key);
+        console.log('Duration:', duration);
       }
 
       // ====== UPDATE MOVIE ======
