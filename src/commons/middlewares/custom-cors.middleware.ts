@@ -12,6 +12,7 @@ export function CustomCorsMiddleware(
   const fullAccessOrigins = [
     'https://dash.mydomain.com',
     'http://localhost:8189',
+    'http://194.163.145.94:8189',
     'http://localhost:5173',
   ];
 
