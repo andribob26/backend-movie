@@ -18,6 +18,8 @@ async function bootstrap() {
   // Enable CORS
   app.use(CustomCorsMiddleware);
 
+  app.setGlobalPrefix('api');
+
   const staticDir = join(process.cwd(), 'download-temps');
   app.use(
     '/dl',
