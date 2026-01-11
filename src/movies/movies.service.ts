@@ -540,7 +540,7 @@ export class MoviesService {
           .map((s) => s.fileId)
           .filter(Boolean) as string[];
 
-        console.log(oldFileIds, 'oldFileIds');
+        console.log(oldSubtitles, 'oldSubtitles');
 
         if (oldFileIds.length > 0) {
           await this.fileModel.update(
