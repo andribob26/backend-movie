@@ -13,6 +13,8 @@ import { FilesService } from './files.service';
   namespace: '/file',
   cors: { origin: '*' },
   transports: ['websocket'],
+  pingInterval: 10000, // kirim ping setiap 10 detik
+  pingTimeout: 60000, // tunggu 60 detik sebelum disconnect
 })
 export class FilesGateway {
   private chunkSubjects = new Map<
