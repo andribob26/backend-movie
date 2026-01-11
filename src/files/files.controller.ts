@@ -14,7 +14,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as fileType from 'file-type';
 
-@Controller('files')
+@Controller('api/files')
 export class FilesController {
   @Get('*')
   async getFile(@Req() req: Request, @Res() res: Response) {
