@@ -305,7 +305,7 @@ export class FilesService {
           const dataFile = await file.save();
 
           const baseUrl =
-            this.configService.get('BASE_URL') || 'http://localhost:3000';
+            this.configService.get('BASE_URL') || 'http://api.nimeninja.win';
           const fileUrl = `${baseUrl}/api/files/${folder}/${fileName}`;
 
           observer.next({
