@@ -1,9 +1,13 @@
 import { Controller, Post } from '@nestjs/common';
 import { FileCleansService } from './file-cleans.service';
+import { BullBoardInstance, InjectBullBoard } from '@bull-board/nestjs';
 
 @Controller('file-cleans')
 export class FileCleansController {
-  constructor(private readonly fileCleansService: FileCleansService) {}
+  constructor(
+    @InjectBullBoard() private readonly boardInstance: BullBoardInstance,
+    private readonly fileCleansService: FileCleansService,
+  ) {}
 
   @Post('enqueue')
   async enqueueDeleteUnused() {

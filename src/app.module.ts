@@ -18,6 +18,10 @@ import { MovieGenresModule } from './movie-genres/movie-genres.module';
 import { CharactersModule } from './characters/characters.module';
 import { CommentsModule } from './comments/comments.module';
 import { VideoAlternativesModule } from './video-alternatives/video-alternatives.module';
+import { InteractionsModule } from './interactions/interactions.module';
+import { DailyViewsModule } from './daily-views/daily-views.module';
+import { BullBoardModule } from '@bull-board/nestjs';
+import { ExpressAdapter } from '@bull-board/express';
 
 @Module({
   imports: [
@@ -40,6 +44,10 @@ import { VideoAlternativesModule } from './video-alternatives/video-alternatives
       }),
       inject: [ConfigService],
     }),
+    BullBoardModule.forRoot({
+      route: '/queues',
+      adapter: ExpressAdapter, // Or FastifyAdapter from `@bull-board/fastify`
+    }),
     VideosModule,
     MoviesModule,
     FilesModule,
@@ -53,6 +61,8 @@ import { VideoAlternativesModule } from './video-alternatives/video-alternatives
     MovieGenresModule,
     CommentsModule,
     VideoAlternativesModule,
+    InteractionsModule,
+    DailyViewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

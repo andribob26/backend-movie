@@ -15,6 +15,7 @@ import { Comment } from 'src/entities/comment.entity';
 import { CommentAuthor } from 'src/entities/comment-author';
 import { CommentMeta } from 'src/entities/comment-meta';
 import { VideoAlternative } from 'src/entities/video-alternative.entity';
+import { DailyView } from 'src/entities/daily-views.entity';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { VideoAlternative } from 'src/entities/video-alternative.entity';
       Comment,
       CommentAuthor,
       CommentMeta,
+      DailyView,
     ]),
   ],
   providers: [MoviesService],

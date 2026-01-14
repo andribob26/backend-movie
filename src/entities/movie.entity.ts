@@ -161,6 +161,14 @@ export class Movie extends Model<
   @HasMany(() => VideoAlternative)
   videoAlternatives: VideoAlternative[];
 
+  @AllowNull(false)
+  @Default(0)
+  @Column(DataType.FLOAT)
+  popularityScore: number;
+
+  @Column(DataType.DATE)
+  popularityScoreLastUpdated: Date | null;
+
   @Column(DataType.DATE)
   declare createdAt: Date;
 

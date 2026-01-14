@@ -14,6 +14,7 @@ export function CustomCorsMiddleware(
     'http://localhost:8189',
     'http://194.163.145.94:8189',
     'http://localhost:5173',
+    'http://localhost:3000',
   ];
 
   // Read-only untuk frontend publik
