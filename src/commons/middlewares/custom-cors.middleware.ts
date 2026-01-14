@@ -15,6 +15,7 @@ export function CustomCorsMiddleware(
     'http://194.163.145.94:8189',
     'http://localhost:5173',
     'http://localhost:3000',
+    'https://api.nimeninja.win',
   ];
 
   // Read-only untuk frontend publik
