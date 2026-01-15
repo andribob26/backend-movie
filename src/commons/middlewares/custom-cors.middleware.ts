@@ -22,6 +22,7 @@ export function CustomCorsMiddleware(
   const readOnlyOrigins = [
     'https://stream.nimeninja.win',
     'https://player-hls-three.vercel.app',
+    'http://localhost:4001',
     'http://localhost:4000', // local frontend
     'http://localhost:3000',
   ];

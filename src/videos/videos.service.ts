@@ -95,6 +95,8 @@ export class VideosService {
           'originalName',
           'prefix',
           'hlsObject',
+          'thumbnail',
+          'sprites',
           'uploadedSize',
           'uploadedProgress',
           'updatedAt',

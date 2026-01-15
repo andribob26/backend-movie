@@ -41,6 +41,14 @@ export class Video extends Model<Video> {
   @Column(DataType.TEXT)
   hlsObject: string;
 
+  @AllowNull(false)
+  @Column(DataType.TEXT)
+  thumbnail: string;
+
+  @AllowNull(false)
+  @Column(DataType.JSONB)
+  sprites: string[];
+
   @Default(false)
   @Column(DataType.BOOLEAN)
   isUsed: boolean;
