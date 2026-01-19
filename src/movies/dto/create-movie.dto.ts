@@ -7,6 +7,7 @@ import {
   IsArray,
   IsDate,
   ValidateNested,
+  IsBoolean,
 } from 'class-validator';
 import { AssocCharacterDto } from 'src/characters/dto/assoc-character.dto';
 import { AssocMovieGenreDto } from 'src/movie-genres/dto/assoc-movie-genre.dto';
@@ -19,6 +20,10 @@ export class CreateMovieDto {
 
   @IsString()
   slug: string;
+
+  @Type(() => Boolean)
+  @IsBoolean()
+  isPublish: boolean;
 
   @IsOptional()
   @IsNumber()
@@ -91,4 +96,8 @@ export class CreateMovieDto {
   @ValidateNested({ each: true })
   @Type(() => AssocVideoAlternativeDto)
   videoAlternatives?: AssocVideoAlternativeDto[] | null;
+
+  @IsOptional()
+  @IsDate()
+  releasedAt?: Date | null;
 }

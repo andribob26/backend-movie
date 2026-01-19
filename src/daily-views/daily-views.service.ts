@@ -20,43 +20,61 @@ export class DailyViewsService {
     this.logger.log('Memulai rollup view7 & view30...');
 
     try {
-      // Pastikan sequelize tersedia (non-null assertion aman karena config Sequelize sudah dijamin)
       if (!this.movieModel.sequelize) {
         throw new Error('Sequelize instance tidak tersedia pada Movie model');
       }
 
-      const sequelize = this.movieModel.sequelize!; // alias untuk lebih readable
+      const sequelize = this.movieModel.sequelize!;
 
+      // 1. Rollup view7 & view30
       await sequelize.query(`
-        UPDATE movies m
-        SET
-          view7 = COALESCE((
-            SELECT SUM(dv."viewCount")
-            FROM daily_views dv
-            WHERE dv."movieId" = m.id
+      UPDATE movies m
+      SET
+        view7 = COALESCE((
+          SELECT SUM(dv."viewCount")
+          FROM daily_views dv
+          WHERE dv."movieId" = m.id
             AND dv."viewDate" >= CURRENT_DATE - INTERVAL '6 days'
             AND dv."viewDate" <= CURRENT_DATE
-          ), 0),
+        ), 0),
 
-          view30 = COALESCE((
-            SELECT SUM(dv."viewCount")
-            FROM daily_views dv
-            WHERE dv."movieId" = m.id
+        view30 = COALESCE((
+          SELECT SUM(dv."viewCount")
+          FROM daily_views dv
+          WHERE dv."movieId" = m.id
             AND dv."viewDate" >= CURRENT_DATE - INTERVAL '29 days'
             AND dv."viewDate" <= CURRENT_DATE
-          ), 0),
+        ), 0),
 
-          "updatedAt" = CURRENT_TIMESTAMP
-        WHERE EXISTS (
-          SELECT 1 FROM daily_views dv WHERE dv."movieId" = m.id
-        );
-      `);
+        "updatedAt" = CURRENT_TIMESTAMP
+      WHERE EXISTS (
+        SELECT 1 FROM daily_views dv WHERE dv."movieId" = m.id
+      );
+    `);
 
-      this.logger.log('Rollup view7 & view30 selesai!');
+      // 2. Hitung popularityScore
+      await sequelize.query(`
+      UPDATE movies m
+      SET
+        popularityScore = 
+          (COALESCE(m.view7, 0) * 10.0) +
+          (COALESCE(m.view30, 0) * 2.0) +
+          (COALESCE(m.totalLike, 0) * 1.5) +
+          (COALESCE(m.totalComment, 0) * 2.0) +
+          (LEAST(COALESCE(m.rating, 0), 10.0) * 3.0),
+        "popularityScoreLastUpdated" = CURRENT_TIMESTAMP,
+        "updatedAt" = CURRENT_TIMESTAMP
+      WHERE 
+        m.view7 > 0 
+        OR m.view30 > 0 
+        OR m.totalLike > 0 
+        OR m.totalComment > 0 
+        OR m.rating IS NOT NULL;
+    `);
+
+      this.logger.log('Rollup view7, view30, dan popularityScore selesai!');
     } catch (error) {
-      this.logger.error('Error saat rollup view7 & view30', error);
-      // Optional: bisa kirim notifikasi (misal ke Slack/Discord) kalau error
-      // Contoh: await this.notificationService.sendError('Rollup failed', error);
+      this.logger.error('Error saat rollup views & popularity', error);
     }
   }
 }

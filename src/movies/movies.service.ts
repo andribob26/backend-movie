@@ -28,6 +28,7 @@ import { PaginationResponse } from 'src/commons/interfaces/pagination-response.i
 import { Person } from 'src/entities/person.entity';
 import { UpdateMovieDto } from './dto/update-movie.dto';
 import { VideoAlternative } from 'src/entities/video-alternative.entity';
+import { FeaturedMovie } from 'src/entities/featured-movie.entity';
 
 const NAME = 'Movie';
 
@@ -38,6 +39,8 @@ export class MoviesService {
   constructor(
     @InjectModel(Movie)
     private readonly movieModel: typeof Movie,
+    @InjectModel(FeaturedMovie)
+    private readonly featuredMovieModel: typeof FeaturedMovie,
     @InjectModel(Character)
     private readonly characterModel: typeof Character,
     @InjectModel(Country)
@@ -173,79 +176,77 @@ export class MoviesService {
     return null; // tidak ada playlist sama sekali
   }
 
-  private queryOpt = ({ where = {}, orderField = '', orderDirection = '' }) => {
-    return {
-      where,
-      attributes: [
-        'id',
-        'title',
-        'slug',
-        'trailerUrl',
-        'rating',
-        'source',
-        'resolution',
-        'duration',
-        'yearOfRelease',
-        'synopsis',
-        'budget',
-        'worldwideGross',
-        'updatedAt',
-        'createdAt',
-      ],
-      include: [
-        {
-          model: File,
-          as: 'poster',
-          attributes: ['id', 'fileName', 'folder', 'originalName', 'mimeType'],
-        },
-        {
-          model: Video,
-          as: 'video',
-          attributes: ['id', 'fileName', 'hlsObject', 'prefix'],
-        },
-        {
-          model: Subtitle,
-          as: 'subtitles',
-          attributes: ['id', 'language'],
-          include: [
-            {
-              model: File,
-              as: 'file',
-              attributes: [
-                'id',
-                'fileName',
-                'folder',
-                'originalName',
-                'mimeType',
-              ],
-            },
-          ],
-        },
-        {
-          model: AgeRating,
-          as: 'ageRating',
-          attributes: ['id', 'code', 'name'],
-        },
-        { model: Country, as: 'country', attributes: ['id', 'name'] },
-        {
-          model: Genre,
-          as: 'genres',
-          attributes: ['id', 'name'],
-          through: { attributes: [] },
-        },
-        {
-          model: Person,
-          as: 'persons',
-          attributes: ['id', 'name', 'position'],
-          through: {
-            model: Character,
-            as: 'character',
-            attributes: ['id', 'character'],
+  private opt = {
+    attributes: [
+      'id',
+      'title',
+      'slug',
+      'trailerUrl',
+      'rating',
+      'source',
+      'resolution',
+      'duration',
+      'yearOfRelease',
+      'synopsis',
+      'budget',
+      'worldwideGross',
+      'popularityScore',
+      'releasedAt',
+      'updatedAt',
+      'createdAt',
+    ],
+    include: [
+      {
+        model: File,
+        as: 'poster',
+        attributes: ['id', 'fileName', 'folder', 'originalName', 'mimeType'],
+      },
+      {
+        model: Video,
+        as: 'video',
+        attributes: ['id', 'fileName', 'hlsObject', 'prefix'],
+      },
+      {
+        model: Subtitle,
+        as: 'subtitles',
+        attributes: ['id', 'language'],
+        include: [
+          {
+            model: File,
+            as: 'file',
+            attributes: [
+              'id',
+              'fileName',
+              'folder',
+              'originalName',
+              'mimeType',
+            ],
           },
+        ],
+      },
+      {
+        model: AgeRating,
+        as: 'ageRating',
+        attributes: ['id', 'code', 'name'],
+      },
+      { model: Country, as: 'country', attributes: ['id', 'name'] },
+      {
+        model: Genre,
+        as: 'genres',
+        attributes: ['id', 'name'],
+        through: { attributes: [] },
+      },
+      {
+        model: Person,
+        as: 'persons',
+        attributes: ['id', 'name', 'position'],
+        through: {
+          model: Character,
+          as: 'character',
+          attributes: ['id', 'character'],
         },
-      ],
-      order: [[orderField, orderDirection]],
-    };
+      },
+    ],
   };
 
   async findAll(data: {
@@ -278,11 +279,12 @@ export class MoviesService {
         ? (page - 1) * limit
         : undefined;
 
-    const queryOptions: any = this.queryOpt({
+    const queryOptions: any = {
       where,
-      orderField,
-      orderDirection,
-    });
+      attributes: this.opt.attributes,
+      include: this.opt.include,
+      order: [[orderField, orderDirection]],
+    };
 
     if (offset !== undefined && limit !== undefined) {
       queryOptions.offset = offset;
@@ -299,6 +301,379 @@ export class MoviesService {
       limit: limit ?? count,
       lastPage: limit ? Math.ceil(count / limit) : 1,
     };
+  }
+
+  async findFeatured(data: {
+    page?: number;
+    limit?: number;
+  }): Promise<PaginationResponse<Movie>> {
+    const { page, limit } = data;
+
+    const offset =
+      page !== undefined && limit !== undefined
+        ? (page - 1) * limit
+        : undefined;
+
+    const queryOptions: any = {
+      order: [['position', 'ASC']],
+      offset,
+      limit,
+      include: [
+        {
+          model: this.movieModel,
+          as: 'movie',
+          required: true,
+          attributes: this.opt.attributes,
+          include: this.opt.include,
+        },
+      ],
+    };
+
+    if (offset !== undefined && limit !== undefined) {
+      queryOptions.offset = offset;
+      queryOptions.limit = limit;
+    }
+
+    const { rows: featuredItems, count } =
+      await this.featuredMovieModel.findAndCountAll(queryOptions);
+
+    const featuredMovies = featuredItems.map((item) => item.movie);
+
+    return {
+      message: 'Film unggulan berhasil diambil',
+      data: featuredMovies,
+      total: count,
+      page: page ?? 1,
+      limit: limit ?? count,
+      lastPage: limit ? Math.ceil(count / limit) : 1,
+    };
+  }
+
+  async findPopular(data: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<PaginationResponse<Movie>> {
+    const { page, limit, search } = data;
+
+    const where: any = {};
+
+    if (search && search.trim() !== '') {
+      where.title = {
+        [Op.iLike]: `%${search.trim()}%`,
+      };
+    }
+
+    const offset =
+      page !== undefined && limit !== undefined
+        ? (page - 1) * limit
+        : undefined;
+
+    const queryOptions: any = {
+      where,
+      attributes: this.opt.attributes,
+      include: this.opt.include,
+      order: [
+        ['popularityScore', 'DESC'],
+        ['releasedAt', 'DESC'],
+        ['createdAt', 'DESC'],
+      ],
+    };
+
+    if (offset !== undefined && limit !== undefined) {
+      queryOptions.offset = offset;
+      queryOptions.limit = limit;
+    }
+
+    const { rows, count } = await this.movieModel.findAndCountAll(queryOptions);
+
+    return {
+      message: 'Popular movies fetched successfully',
+      data: rows,
+      total: count,
+      page: page ?? 1,
+      limit: limit ?? count,
+      lastPage: limit ? Math.ceil(count / limit) : 1,
+    };
+  }
+
+  // 1. Top Minggu Ini (berdasarkan view7 DESC + tie-breaker releasedAt DESC)
+  async findTopThisWeek(data: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<PaginationResponse<Movie>> {
+    const { page, limit, search } = data;
+
+    const where: any = {};
+
+    if (search && search.trim() !== '') {
+      where.title = {
+        [Op.iLike]: `%${search.trim()}%`,
+      };
+    }
+
+    const offset =
+      page !== undefined && limit !== undefined
+        ? (page - 1) * limit
+        : undefined;
+
+    const queryOptions: any = {
+      where,
+      attributes: this.opt.attributes,
+      include: this.opt.include,
+      order: [
+        ['view7', 'DESC'], // Utama: view minggu ini tertinggi
+        ['releasedAt', 'DESC'], // Tie-breaker: film rilis terbaru duluan
+        ['createdAt', 'DESC'], // Fallback kalau releasedAt null
+      ],
+    };
+
+    if (offset !== undefined && limit !== undefined) {
+      queryOptions.offset = offset;
+      queryOptions.limit = limit;
+    }
+
+    const { rows, count } = await this.movieModel.findAndCountAll(queryOptions);
+
+    return {
+      message: 'Top movies this week fetched successfully',
+      data: rows,
+      total: count,
+      page: page ?? 1,
+      limit: limit ?? count,
+      lastPage: limit ? Math.ceil(count / limit) : 1,
+    };
+  }
+
+  // 2. Top Bulan Ini (berdasarkan view30 DESC + tie-breaker releasedAt DESC)
+  async findTopThisMonth(data: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<PaginationResponse<Movie>> {
+    const { page, limit, search } = data;
+
+    const where: any = {};
+
+    if (search && search.trim() !== '') {
+      where.title = {
+        [Op.iLike]: `%${search.trim()}%`,
+      };
+    }
+
+    const offset =
+      page !== undefined && limit !== undefined
+        ? (page - 1) * limit
+        : undefined;
+
+    const queryOptions: any = {
+      where,
+      attributes: this.opt.attributes,
+      include: this.opt.include,
+      order: [
+        ['view30', 'DESC'], // Utama: view 30 hari tertinggi
+        ['releasedAt', 'DESC'], // Tie-breaker: rilis terbaru
+        ['createdAt', 'DESC'], // Fallback
+      ],
+    };
+
+    if (offset !== undefined && limit !== undefined) {
+      queryOptions.offset = offset;
+      queryOptions.limit = limit;
+    }
+
+    const { rows, count } = await this.movieModel.findAndCountAll(queryOptions);
+
+    return {
+      message: 'Top movies this month fetched successfully',
+      data: rows,
+      total: count,
+      page: page ?? 1,
+      limit: limit ?? count,
+      lastPage: limit ? Math.ceil(count / limit) : 1,
+    };
+  }
+
+  // 3. Best Rating (berdasarkan rating DESC + tie-breaker releasedAt DESC)
+  async findBestRated(data: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<PaginationResponse<Movie>> {
+    const { page, limit, search } = data;
+
+    const where: any = {};
+
+    if (search && search.trim() !== '') {
+      where.title = {
+        [Op.iLike]: `%${search.trim()}%`,
+      };
+    }
+
+    // Opsional: hanya tampilkan film yang punya rating (hindari rating 0 mendominasi)
+    where.rating = {
+      [Op.not]: null,
+    };
+
+    const offset =
+      page !== undefined && limit !== undefined
+        ? (page - 1) * limit
+        : undefined;
+
+    const queryOptions: any = {
+      where,
+      attributes: this.opt.attributes,
+      include: this.opt.include,
+      order: [
+        ['rating', 'DESC'], // Utama: rating tertinggi
+        ['releasedAt', 'DESC'], // Tie-breaker: rilis terbaru
+        ['createdAt', 'DESC'], // Fallback
+      ],
+    };
+
+    if (offset !== undefined && limit !== undefined) {
+      queryOptions.offset = offset;
+      queryOptions.limit = limit;
+    }
+
+    const { rows, count } = await this.movieModel.findAndCountAll(queryOptions);
+
+    return {
+      message: 'Best rated movies fetched successfully',
+      data: rows,
+      total: count,
+      page: page ?? 1,
+      limit: limit ?? count,
+      lastPage: limit ? Math.ceil(count / limit) : 1,
+    };
+  }
+
+  async findRecommendations(data: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<PaginationResponse<Movie>> {
+    const { page, limit, search } = data;
+
+    const whereBase: any = {
+      isPublish: true,
+      releasedAt: { [Op.lte]: new Date() },
+    };
+
+    if (search && search.trim() !== '') {
+      whereBase.title = { [Op.iLike]: `%${search.trim()}%` };
+    }
+
+    // Hitung offset hanya kalau page & limit benar-benar ada
+    const offset =
+      page !== undefined && limit !== undefined
+        ? (page - 1) * limit
+        : undefined;
+
+    // Proporsi limit per kategori (tetap sama)
+    const popularLimit = Math.floor((limit ?? 20) * 0.4); // default 20 kalau limit undefined
+    const trendingLimit = Math.floor((limit ?? 20) * 0.3);
+    const newLimit = Math.floor((limit ?? 20) * 0.2);
+    const bestRatedLimit =
+      (limit ?? 20) - (popularLimit + trendingLimit + newLimit);
+
+    const popularRows = await this.movieModel.findAll({
+      where: whereBase,
+      attributes: this.opt.attributes,
+      include: this.opt.include,
+      order: [
+        ['popularityScore', 'DESC'],
+        ['releasedAt', 'DESC'],
+      ],
+      limit: popularLimit,
+    });
+
+    const trendingRows = await this.movieModel.findAll({
+      where: { ...whereBase, view7: { [Op.gt]: 0 } },
+      attributes: this.opt.attributes,
+      include: this.opt.include,
+      order: [
+        ['view7', 'DESC'],
+        ['releasedAt', 'DESC'],
+      ],
+      limit: trendingLimit,
+    });
+
+    const newRows = await this.movieModel.findAll({
+      where: {
+        ...whereBase,
+        releasedAt: {
+          [Op.gte]: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        },
+      },
+      attributes: this.opt.attributes,
+      include: this.opt.include,
+      order: [
+        ['releasedAt', 'DESC'],
+        ['popularityScore', 'DESC'],
+      ],
+      limit: newLimit,
+    });
+
+    const bestRatedRows = await this.movieModel.findAll({
+      where: { ...whereBase, rating: { [Op.not]: null } },
+      attributes: this.opt.attributes,
+      include: this.opt.include,
+      order: [
+        ['rating', 'DESC'],
+        ['releasedAt', 'DESC'],
+      ],
+      limit: bestRatedLimit,
+    });
+
+    // Gabung & shuffle ringan
+    let allRecommendations = [
+      ...popularRows,
+      ...trendingRows,
+      ...newRows,
+      ...bestRatedRows,
+    ];
+
+    allRecommendations = allRecommendations.sort(() => Math.random() - 0.7);
+
+    // Pagination sesuai standar findAll
+    let paginated = allRecommendations;
+    if (offset !== undefined && limit !== undefined) {
+      paginated = allRecommendations.slice(offset, offset + limit);
+    }
+
+    const total = allRecommendations.length; // pakai length hasil gabungan (karena mixed)
+
+    return {
+      message: 'Rich recommended movies fetched successfully',
+      data: paginated,
+      total,
+      page: page ?? 1,
+      limit: limit ?? total,
+      lastPage: limit ? Math.ceil(total / limit) : 1,
+    };
+  }
+
+  async findOne(data: { slug: string }): Promise<BaseResponse<Movie>> {
+    try {
+      const dataGenre = await this.movieModel.findOne({
+        where: { slug: data.slug },
+        attributes: this.opt.attributes,
+        include: this.opt.include,
+      });
+
+      if (!dataGenre) {
+        throw new NotFoundException(`${NAME} with slug ${data.slug} not found`);
+      }
+
+      return {
+        message: `${NAME} fetched successfully`,
+        data: dataGenre,
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   async create(data: CreateMovieDto): Promise<BaseResponse<Movie>> {
@@ -351,6 +726,7 @@ export class MoviesService {
         {
           title: data.title,
           slug: data.slug,
+          isPublish: data.isPublish,
           rating: data.rating,
           source: data.source,
           resolution: data.resolution,
@@ -364,6 +740,7 @@ export class MoviesService {
           videoId: data.videoId,
           ageRatingId: data.ageRatingId,
           countryId: data.countryId,
+          releasedAt: data.releasedAt,
         } as InferCreationAttributes<Movie>,
         { transaction },
       );
@@ -510,6 +887,7 @@ export class MoviesService {
         {
           title: data.title,
           slug: data.slug,
+          isPublish: data.isPublish,
           rating: data.rating,
           source: data.source,
           resolution: data.resolution,
@@ -523,6 +901,7 @@ export class MoviesService {
           videoId: data.videoId,
           ageRatingId: data.ageRatingId,
           countryId: data.countryId,
+          releasedAt: data.releasedAt,
         },
         { transaction },
       );
@@ -656,5 +1035,166 @@ export class MoviesService {
       await transaction.rollback();
       throw error;
     }
+  }
+
+  async findRelatedMovies(
+    movieId: string,
+    data: { limit?: number } = { limit: 10 },
+  ): Promise<BaseResponse<Movie[]>> {
+    const limit = data.limit ?? 10;
+
+    const mainMovie = await this.movieModel.findByPk(movieId, {
+      attributes: ['id', 'title', 'country_id', 'year_of_release'],
+      include: [
+        { model: Genre, as: 'genres', attributes: ['id'] },
+        {
+          model: Person,
+          as: 'persons',
+          attributes: ['id'],
+          include: [
+            {
+              model: Character,
+              as: 'characters',
+              attributes: ['character'],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!mainMovie) {
+      throw new NotFoundException('Movie not found');
+    }
+
+    const genreIds = mainMovie.dataValues.genres?.map((g) => g.id) || [];
+
+    const personIds =
+      mainMovie.dataValues.persons?.flatMap((p) => {
+        const isDirector = p.characters?.some(
+          (char) => char.character === null,
+        );
+        const isActor = p.characters?.some((char) => char.character !== null);
+
+        if (isDirector || isActor) {
+          return [p.id];
+        }
+        return [];
+      }) || [];
+
+    let titleWords: string[] = [];
+    if (
+      mainMovie.dataValues.title &&
+      typeof mainMovie.dataValues.title === 'string' &&
+      mainMovie.dataValues.title.trim() !== ''
+    ) {
+      titleWords = mainMovie.dataValues.title
+        .trim()
+        .split(/\s+/)
+        .filter((word) => word.length > 1) // Longgar biar match "Avatar" dengan "Avatar 2"
+        .slice(0, 5);
+    } else {
+      console.warn(`Film ID ${movieId} tidak punya title valid`);
+    }
+
+    const titleConditions = titleWords.map((word) => ({
+      title: { [Op.iLike]: `%${word}%` },
+    }));
+
+    const orConditions: any[] = [];
+
+    // Prioritas tinggi: judul mirip
+    if (titleConditions.length > 0) {
+      orConditions.push({ [Op.or]: titleConditions });
+    }
+
+    // Prioritas sedang: genre sama
+    if (genreIds.length > 0) {
+      orConditions.push({ '$genres.id$': { [Op.in]: genreIds } });
+    }
+
+    // Prioritas sedang: person sama
+    if (personIds.length > 0) {
+      orConditions.push({ '$persons.id$': { [Op.in]: personIds } });
+    }
+
+    // Prioritas rendah: country + tahun (opsional, hanya kalau keduanya ada)
+    if (mainMovie.dataValues.countryId && mainMovie.dataValues.yearOfRelease) {
+      const minYear = parseInt(mainMovie.dataValues.yearOfRelease) - 5;
+      const maxYear = parseInt(mainMovie.dataValues.yearOfRelease) + 5;
+      orConditions.push({
+        country_id: mainMovie.dataValues.countryId,
+        year_of_release: {
+          [Op.between]: [minYear.toString(), maxYear.toString()],
+        },
+      });
+    }
+
+    const where: any = {
+      // id: { [Op.ne]: movieId },
+      // isPublish: false,
+    };
+
+    console.log(titleConditions, 'akjdkadhkjahjdakdaksdhkjaksdhkaksd');
+
+    if (orConditions.length > 0) {
+      where[Op.or] = orConditions;
+    } else {
+      // Fallback ke semua film publish & rilis (urut popular) kalau tidak ada match
+      console.warn(
+        `Tidak ada match spesifik untuk film ${movieId}, fallback ke popular`,
+      );
+    }
+
+    const relatedMovies = await this.movieModel.findAll({
+      where,
+      attributes: this.opt.attributes,
+      include: this.opt.include,
+      order: [
+        // Judul mirip skor 1
+        [
+          Sequelize.literal(
+            titleConditions.length > 0
+              ? `CASE WHEN ${titleConditions.map((_, i) => `title ILIKE '%${titleWords[i]}%'`).join(' OR ')} THEN 1 ELSE 5 END`
+              : '5',
+          ),
+          'ASC',
+        ],
+
+        // Genre skor 2
+        [
+          Sequelize.literal(
+            `CASE WHEN EXISTS (
+            SELECT 1 FROM "movies_genres" mg 
+            INNER JOIN "genres" g ON mg."genre_id" = g."id" 
+            WHERE mg."movie_id" = "Movie"."id" 
+            AND g."id" IN (${genreIds.length > 0 ? genreIds.map((id) => `'${id}'`).join(',') : 'NULL'})
+          ) THEN 2 ELSE 5 END`,
+          ),
+          'ASC',
+        ],
+
+        // Person skor 3
+        [
+          Sequelize.literal(
+            `CASE WHEN EXISTS (
+            SELECT 1 FROM "characters" c 
+            WHERE c."movie_id" = "Movie"."id" 
+            AND c."person_id" IN (${personIds.length > 0 ? personIds.map((id) => `'${id}'`).join(',') : 'NULL'})
+          ) THEN 3 ELSE 5 END`,
+          ),
+          'ASC',
+        ],
+
+        // ['popularityScore', 'DESC'],
+        // ['releasedAt', 'DESC'],
+        ['createdAt', 'DESC'],
+      ],
+      limit,
+    });
+
+    return {
+      message: 'Related movies fetched successfully',
+      data: relatedMovies || [],
+    };
   }
 }

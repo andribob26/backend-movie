@@ -25,6 +25,7 @@ import { Subtitle } from './subtitle.entity';
 import { Character } from './character.entity';
 import { Comment } from './comment.entity';
 import { VideoAlternative } from './video-alternative.entity';
+import { Season } from './season.entity';
 @Table({
   tableName: 'movies',
   timestamps: true,
@@ -168,6 +169,23 @@ export class Movie extends Model<
 
   @Column(DataType.DATE)
   popularityScoreLastUpdated: Date | null;
+
+  @AllowNull(false)
+  @Default(false)
+  @Column(DataType.BOOLEAN)
+  isPublish: boolean;
+
+  @AllowNull(true)
+  @Column(DataType.DATE)
+  releasedAt: Date | null;
+
+  @AllowNull(false)
+  @Default('movie')
+  @Column(DataType.ENUM('movie', 'series'))
+  type: 'movie' | 'series';
+
+  @HasMany(() => Season)
+  seasons: Season[];
 
   @Column(DataType.DATE)
   declare createdAt: Date;

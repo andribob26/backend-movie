@@ -11,6 +11,7 @@ import { Person } from './person.entity';
 import { Movie } from './movie.entity';
 import { InferAttributes, InferCreationAttributes } from 'sequelize';
 import { File } from './file.entity';
+import { Episode } from './episode.entity';
 
 @Table({
   tableName: 'subtitles',
@@ -41,13 +42,23 @@ export class Subtitle extends Model<
   @BelongsTo(() => File)
   file: File;
 
+  // Opsional: untuk movie tunggal
   @ForeignKey(() => Movie)
-  @AllowNull(false)
+  @AllowNull(true) // bisa null kalau subtitle untuk episode
   @Column(DataType.UUID)
-  movieId: string;
+  movieId: string | null;
 
   @BelongsTo(() => Movie)
-  movie: Movie;
+  movie: Movie | null;
+
+  // Opsional: untuk episode
+  @ForeignKey(() => Episode)
+  @AllowNull(true) // bisa null kalau subtitle untuk movie
+  @Column(DataType.UUID)
+  episodeId: string | null;
+
+  @BelongsTo(() => Episode)
+  episode: Episode | null;
 
   @Column(DataType.DATE)
   declare createdAt: Date;
