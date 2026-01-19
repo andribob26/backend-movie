@@ -33,6 +33,9 @@
         "name": "Film-Noir"
     },
     {
+        "name": "Game-Show"
+    },
+    {
         "name": "History"
     },
     {
@@ -42,10 +45,13 @@
         "name": "Music"
     },
     {
-        "name": "Musical"
+        "name": "Mystery"
     },
     {
-        "name": "Mystery"
+        "name": "Psychological"
+    },
+    {
+        "name": "Reality-TV"
     },
     {
         "name": "Romance"
@@ -54,7 +60,19 @@
         "name": "Sci-Fi"
     },
     {
+        "name": "Short"
+    },
+    {
         "name": "Sport"
+    },
+    {
+        "name": "Supernatural"
+    },
+    {
+        "name": "TV Movie"
+    },
+    {
+        "name": "Talk-Show"
     },
     {
         "name": "Thriller"
@@ -66,84 +84,6 @@
         "name": "Western"
     },
     {
-        "name": "Adult"
-    },
-    {
-        "name": "Short"
-    },
-    {
-        "name": "News"
-    },
-    {
-        "name": "Reality-TV"
-    },
-    {
-        "name": "Talk-Show"
-    },
-    {
-        "name": "Game-Show"
-    },
-    {
-        "name": "Experimental"
-    },
-    {
-        "name": "Action-Adventure"
-    },
-    {
-        "name": "Comedy-Drama"
-    },
-    {
-        "name": "Crime-Drama"
-    },
-    {
-        "name": "Fantasy-Adventure"
-    },
-    {
-        "name": "Horror-Comedy"
-    },
-    {
-        "name": "Romantic-Comedy"
-    },
-    {
-        "name": "Musical-Comedy"
-    },
-    {
-        "name": "Psychological-Thriller"
-    },
-    {
-        "name": "Political-Thriller"
-    },
-    {
-        "name": "Superhero"
-    },
-    {
-        "name": "Martial-Arts"
-    },
-    {
-        "name": "Disaster"
-    },
-    {
-        "name": "Spy"
-    },
-    {
-        "name": "Western-Drama"
-    },
-    {
-        "name": "Teen"
-    },
-    {
-        "name": "Coming-of-Age"
-    },
-    {
-        "name": "Family-Adventure"
-    },
-    {
-        "name": "Historical-Drama"
-    },
-    {
-        "name": "Epic"
-    },
-    {
-        "name": "Action-Comedy"
+        "name": "Wrestling"
     }
 ]

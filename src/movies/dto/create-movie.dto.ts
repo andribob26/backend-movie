@@ -99,5 +99,6 @@ export class CreateMovieDto {
 
   @IsOptional()
   @IsDate()
+  @Type(() => Date)
   releasedAt?: Date | null;
 }
