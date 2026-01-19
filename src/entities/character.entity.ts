@@ -48,6 +48,10 @@ export class Character extends Model<
   @Column(DataType.STRING)
   character?: string | null;
 
+  @AllowNull(true)
+  @Column(DataType.INTEGER)
+  order: number | null;
+
   @Column(DataType.DATE)
   declare createdAt: Date;
 

@@ -3,6 +3,7 @@ import {
   BelongsToMany,
   ForeignKey,
   HasMany,
+  Index,
   Model,
 } from 'sequelize-typescript';
 import {
@@ -15,7 +16,7 @@ import {
 } from 'sequelize-typescript';
 import { Movie } from './movie.entity';
 import { File } from './file.entity';
-import { InferAttributes, InferCreationAttributes } from 'sequelize';
+import { InferAttributes, InferCreationAttributes, Op } from 'sequelize';
 import { Character } from './character.entity';
 
 @Table({

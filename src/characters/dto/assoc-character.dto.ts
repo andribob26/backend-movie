@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsNumber } from 'class-validator';
 
 export class AssocCharacterDto {
   @IsOptional()
@@ -11,4 +11,8 @@ export class AssocCharacterDto {
   @IsOptional()
   @IsString()
   character?: string | null;
+
+  @IsOptional()
+  @IsNumber()
+  order?: number | null;
 }

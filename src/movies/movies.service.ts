@@ -783,6 +783,7 @@ export class MoviesService {
                 movieId: movie.dataValues.id,
                 personId: c.personId,
                 character: c.character,
+                order: c.order,
               }) as InferCreationAttributes<Character>,
           ),
           { transaction },
@@ -979,6 +980,7 @@ export class MoviesService {
                   movieId: movie.dataValues.id,
                   personId: c.personId,
                   character: c.character,
+                  order: c.order,
                 }) as InferCreationAttributes<Character>,
             ),
             { transaction },
@@ -1037,6 +1039,13 @@ export class MoviesService {
     }
   }
 
+  private normalizeTitleWord(word: string): string {
+    return word
+      .toLowerCase()
+      .replace(/[^\w]/g, '') // hapus : , . - dll
+      .replace(/s$/, ''); // singular: aliens → alien
+  }
+
   async findRelatedMovies(
     movieId: string,
     data: { limit?: number } = { limit: 10 },
@@ -1046,18 +1055,16 @@ export class MoviesService {
     const mainMovie = await this.movieModel.findByPk(movieId, {
       attributes: ['id', 'title', 'country_id', 'year_of_release'],
       include: [
-        { model: Genre, as: 'genres', attributes: ['id'] },
+        {
+          model: Genre,
+          as: 'genres',
+          attributes: ['id'],
+          through: { attributes: [] },
+        },
         {
           model: Person,
           as: 'persons',
-          attributes: ['id'],
-          include: [
-            {
-              model: Character,
-              as: 'characters',
-              attributes: ['character'],
-            },
-          ],
+          attributes: ['id', 'position'],
         },
       ],
     });
@@ -1067,21 +1074,17 @@ export class MoviesService {
     }
 
     const genreIds = mainMovie.dataValues.genres?.map((g) => g.id) || [];
-
     const personIds =
       mainMovie.dataValues.persons?.flatMap((p) => {
-        const isDirector = p.characters?.some(
-          (char) => char.character === null,
-        );
-        const isActor = p.characters?.some((char) => char.character !== null);
-
-        if (isDirector || isActor) {
+        const isDirector = p.dataValues.position === 'Director';
+        if (isDirector) {
           return [p.id];
         }
         return [];
       }) || [];
 
     let titleWords: string[] = [];
+
     if (
       mainMovie.dataValues.title &&
       typeof mainMovie.dataValues.title === 'string' &&
@@ -1090,7 +1093,8 @@ export class MoviesService {
       titleWords = mainMovie.dataValues.title
         .trim()
         .split(/\s+/)
-        .filter((word) => word.length > 1) // Longgar biar match "Avatar" dengan "Avatar 2"
+        .map(this.normalizeTitleWord)
+        .filter((word) => word.length > 2) // buang kata terlalu pendek
         .slice(0, 5);
     } else {
       console.warn(`Film ID ${movieId} tidak punya title valid`);
@@ -1108,13 +1112,45 @@ export class MoviesService {
     }
 
     // Prioritas sedang: genre sama
+    // if (genreIds.length > 0) {
+    //   orConditions.push({ '$genres.id$': { [Op.in]: genreIds } });
+    // }
+
+    // // Prioritas sedang: person sama
+    // if (personIds.length > 0) {
+    //   orConditions.push({ '$persons.id$': { [Op.in]: personIds } });
+    // }
+
+    // Prioritas 2: genre sama (pakai subquery)
     if (genreIds.length > 0) {
-      orConditions.push({ '$genres.id$': { [Op.in]: genreIds } });
+      orConditions.push(
+        Sequelize.where(
+          Sequelize.literal(`(
+          SELECT COUNT(*) 
+          FROM "movies_genres" 
+          WHERE "movie_id" = "Movie"."id" 
+          AND "genre_id" IN (${genreIds.map((id) => `'${id}'`).join(',')})
+        )`),
+          Op.gt,
+          0,
+        ),
+      );
     }
 
-    // Prioritas sedang: person sama
+    // Prioritas 3: person sama (aktor/director)
     if (personIds.length > 0) {
-      orConditions.push({ '$persons.id$': { [Op.in]: personIds } });
+      orConditions.push(
+        Sequelize.where(
+          Sequelize.literal(`(
+          SELECT COUNT(*) 
+          FROM "characters" 
+          WHERE "movie_id" = "Movie"."id" 
+          AND "person_id" IN (${personIds.map((id) => `'${id}'`).join(',')})
+        )`),
+          Op.gt,
+          0,
+        ),
+      );
     }
 
     // Prioritas rendah: country + tahun (opsional, hanya kalau keduanya ada)
@@ -1130,11 +1166,12 @@ export class MoviesService {
     }
 
     const where: any = {
-      // id: { [Op.ne]: movieId },
+      id: { [Op.ne]: movieId },
       // isPublish: false,
+      releasedAt: { [Op.lte]: new Date() },
     };
 
-    console.log(titleConditions, 'akjdkadhkjahjdakdaksdhkjaksdhkaksd');
+    console.log(genreIds, 'akjdkadhkjahjdakdaksdhkjaksdhkaksd');
 
     if (orConditions.length > 0) {
       where[Op.or] = orConditions;
@@ -1186,7 +1223,7 @@ export class MoviesService {
         ],
 
         // ['popularityScore', 'DESC'],
-        // ['releasedAt', 'DESC'],
+        ['releasedAt', 'DESC'],
         ['createdAt', 'DESC'],
       ],
       limit,
