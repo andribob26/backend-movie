@@ -243,7 +243,7 @@ export class MoviesService {
         through: {
           model: Character,
           as: 'character',
-          attributes: ['id', 'character'],
+          attributes: ['id', 'character', 'order'],
         },
       },
     ],
