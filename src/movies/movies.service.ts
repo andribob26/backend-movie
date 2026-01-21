@@ -242,7 +242,7 @@ export class MoviesService {
       {
         model: Country,
         as: 'countries', // ← tambahkan ini kalau belum ada
-        attributes: ['id', 'name'],
+        attributes: ['id', 'name', 'code'],
         through: { attributes: [] }, // kalau pakai junction table movies_countries
       },
       {
