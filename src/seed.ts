@@ -21,15 +21,15 @@ async function bootstrap() {
     console.log('Database connected');
 
     // bulk insert / update
-    await Country.bulkCreate(
-      countriesJson.map((country: any) => ({
-        name: country.name,
-        code: country.code,
-      })) as InferCreationAttributes<Country>[],
-      {
-        updateOnDuplicate: ['name', 'code'], // field yang diupdate kalau duplikat
-      },
-    );
+    // await Country.bulkCreate(
+    //   countriesJson.map((country: any) => ({
+    //     name: country.name,
+    //     code: country.code,
+    //   })) as InferCreationAttributes<Country>[],
+    //   {
+    //     updateOnDuplicate: ['name', 'code'], // field yang diupdate kalau duplikat
+    //   },
+    // );
 
     // await Genre.bulkCreate(
     //   genresJsonRaw.map((genre: any) => ({
@@ -40,16 +40,16 @@ async function bootstrap() {
     //   },
     // );
 
-    // await AgeRating.bulkCreate(
-    //   ageRatingsJsonRaw.map((aRating: any) => ({
-    //     name: aRating.name,
-    //     code: aRating.code,
-    //     category: aRating.category,
-    //   })) as InferCreationAttributes<AgeRating>[],
-    //   {
-    //     updateOnDuplicate: ['name'], // field yang diupdate kalau duplikat
-    //   },
-    // );
+    await AgeRating.bulkCreate(
+      ageRatingsJsonRaw.map((aRating: any) => ({
+        name: aRating.name,
+        code: aRating.code,
+        category: aRating.category,
+      })) as InferCreationAttributes<AgeRating>[],
+      {
+        updateOnDuplicate: ['name'], // field yang diupdate kalau duplikat
+      },
+    );
 
     console.log('Seeding done!');
   } catch (err) {

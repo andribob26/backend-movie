@@ -277,6 +277,7 @@ export class MoviesService {
 
     const orderByMap: Record<string, string> = {
       title: 'title',
+      releasedAt: 'releasedAt',
       createdAt: 'createdAt',
       updatedAt: 'updatedAt',
     };
@@ -300,7 +301,10 @@ export class MoviesService {
       queryOptions.limit = limit;
     }
 
-    const { rows, count } = await this.movieModel.findAndCountAll(queryOptions);
+    const { rows, count } = await this.movieModel.findAndCountAll({
+      ...queryOptions,
+      distinct: true,
+    });
 
     return {
       message: `${NAME} fetched successfully`,

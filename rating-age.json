@@ -1,37 +1,32 @@
 [
     {
-        "code": "SU",
-        "name": "Semua Umur",
+        "code": "G",
+        "name": "General Audiences",
         "category": "Family / Kids"
     },
     {
-        "code": "A",
-        "name": "Anak-anak",
-        "category": "Children"
-    },
-    {
-        "code": "BO",
-        "name": "Bimbingan Orang Tua",
+        "code": "PG",
+        "name": "Parental Guidance",
         "category": "Parental Guidance"
     },
     {
-        "code": "R13",
-        "name": "Remaja 13+",
+        "code": "PG-13",
+        "name": "Teens 13+",
         "category": "Teen / Remaja"
     },
     {
-        "code": "D17",
-        "name": "Dewasa 17+",
+        "code": "R",
+        "name": "Restricted 17+",
         "category": "Young Adult"
     },
     {
-        "code": "D21",
-        "name": "Dewasa 21+",
+        "code": "NC-17",
+        "name": "Adults 21+",
         "category": "Mature / Adult"
     },
     {
         "code": "NR",
-        "name": "Tidak Diklasifikasikan / Unrated",
+        "name": "Not Rated",
         "category": "Not Rated"
     }
 ]
