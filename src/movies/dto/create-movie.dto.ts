@@ -13,6 +13,7 @@ import { AssocCharacterDto } from 'src/characters/dto/assoc-character.dto';
 import { AssocMovieGenreDto } from 'src/movie-genres/dto/assoc-movie-genre.dto';
 import { AssocVideoAlternativeDto } from 'src/video-alternatives/dto/assoc-video-alternative.dto';
 import { AssocSubtitleDto } from 'src/subtitles/dto/assoc-subtitle.dto';
+import { AssocMovieCountryDto } from 'src/movie-countries/dto/assoc-movie-country.dto';
 
 export class CreateMovieDto {
   @IsString()
@@ -88,8 +89,10 @@ export class CreateMovieDto {
   ageRatingId?: string | null;
 
   @IsOptional()
-  @IsUUID()
-  countryId?: string | null;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AssocMovieCountryDto)
+  countries?: AssocMovieCountryDto[] | null;
 
   @IsOptional()
   @IsArray()

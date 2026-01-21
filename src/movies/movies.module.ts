@@ -19,12 +19,14 @@ import { DailyView } from 'src/entities/daily-views.entity';
 import { Season } from 'src/entities/season.entity';
 import { Episode } from 'src/entities/episode.entity';
 import { FeaturedMovie } from 'src/entities/featured-movie.entity';
+import { MovieCountry } from 'src/entities/movie-country.entity';
 
 @Module({
   imports: [
     SequelizeModule.forFeature([
       Movie,
       MovieGenre,
+      MovieCountry,
       VideoAlternative,
       File,
       Country,

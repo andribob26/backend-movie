@@ -1,4 +1,4 @@
-import { HasMany, Model } from 'sequelize-typescript';
+import { BelongsToMany, HasMany, Model } from 'sequelize-typescript';
 import {
   AllowNull,
   Column,
@@ -9,6 +9,7 @@ import {
 } from 'sequelize-typescript';
 import { Movie } from './movie.entity';
 import { InferAttributes, InferCreationAttributes } from 'sequelize';
+import { MovieCountry } from './movie-country.entity';
 
 @Table({
   tableName: 'countries',
@@ -35,7 +36,7 @@ export class Country extends Model<
   @Column({ type: DataType.STRING, unique: true })
   code: string;
 
-  @HasMany(() => Movie)
+  @BelongsToMany(() => Movie, () => MovieCountry)
   movies: Movie[];
 
   @Column(DataType.DATE)

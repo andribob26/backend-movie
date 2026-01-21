@@ -3,6 +3,7 @@ import {
   BelongsToMany,
   ForeignKey,
   HasMany,
+  HasOne,
   Model,
 } from 'sequelize-typescript';
 import {
@@ -26,6 +27,7 @@ import { Character } from './character.entity';
 import { Comment } from './comment.entity';
 import { VideoAlternative } from './video-alternative.entity';
 import { Season } from './season.entity';
+import { MovieCountry } from './movie-country.entity';
 @Table({
   tableName: 'movies',
   timestamps: true,
@@ -123,13 +125,16 @@ export class Movie extends Model<
   @BelongsToMany(() => Genre, () => MovieGenre)
   genres: Genre[];
 
-  @ForeignKey(() => Country)
-  @AllowNull(true)
-  @Column(DataType.UUID)
-  countryId: string | null;
+  @BelongsToMany(() => Country, () => MovieCountry)
+  countries: Country[];
 
-  @BelongsTo(() => Country)
-  country: Country;
+  // @ForeignKey(() => Country)
+  // @AllowNull(true)
+  // @Column(DataType.UUID)
+  // countryId: string | null;
+
+  // @BelongsTo(() => Country)
+  // country: Country;
 
   // ===========================
   // Kolom tambahan untuk popularitas
@@ -184,8 +189,14 @@ export class Movie extends Model<
   @Column(DataType.ENUM('movie', 'series'))
   type: 'movie' | 'series';
 
-  @HasMany(() => Season)
-  seasons: Season[];
+  // Ganti menjadi:
+  @ForeignKey(() => Season)
+  @AllowNull(true)
+  @Column(DataType.UUID)
+  seasonId?: string | null;
+
+  @HasOne(() => Season)
+  season?: Season;
 
   @Column(DataType.DATE)
   declare createdAt: Date;

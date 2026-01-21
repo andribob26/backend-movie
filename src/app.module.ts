@@ -22,6 +22,7 @@ import { InteractionsModule } from './interactions/interactions.module';
 import { DailyViewsModule } from './daily-views/daily-views.module';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { ExpressAdapter } from '@bull-board/express';
+import { MovieCountriesModule } from './movie-countries/movie-countries.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { ExpressAdapter } from '@bull-board/express';
     VideoAlternativesModule,
     InteractionsModule,
     DailyViewsModule,
+    MovieCountriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

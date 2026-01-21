@@ -44,14 +44,6 @@ export class Season extends Model<
   @Column(DataType.STRING)
   title: string | null; // misal "Season 1"
 
-  @AllowNull(true)
-  @Column(DataType.TEXT)
-  synopsis: string | null;
-
-  @AllowNull(true)
-  @Column(DataType.DATE)
-  releasedAt: Date | null;
-
   @AllowNull(false)
   @Default(0)
   @Column(DataType.INTEGER)

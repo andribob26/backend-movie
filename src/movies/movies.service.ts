@@ -29,6 +29,7 @@ import { Person } from 'src/entities/person.entity';
 import { UpdateMovieDto } from './dto/update-movie.dto';
 import { VideoAlternative } from 'src/entities/video-alternative.entity';
 import { FeaturedMovie } from 'src/entities/featured-movie.entity';
+import { MovieCountry } from 'src/entities/movie-country.entity';
 
 const NAME = 'Movie';
 
@@ -55,6 +56,8 @@ export class MoviesService {
     private readonly subtitleModel: typeof Subtitle,
     @InjectModel(MovieGenre)
     private readonly movieGenreModel: typeof MovieGenre,
+    @InjectModel(MovieCountry)
+    private readonly movieCountryModel: typeof MovieCountry,
     @InjectModel(VideoAlternative)
     private readonly videoAlternativeModel: typeof VideoAlternative,
     private readonly sequelize: Sequelize,
@@ -194,6 +197,7 @@ export class MoviesService {
       'releasedAt',
       'updatedAt',
       'createdAt',
+      'view7',
     ],
     include: [
       {
@@ -229,12 +233,17 @@ export class MoviesService {
         as: 'ageRating',
         attributes: ['id', 'code', 'name'],
       },
-      { model: Country, as: 'country', attributes: ['id', 'name'] },
       {
         model: Genre,
         as: 'genres',
         attributes: ['id', 'name'],
         through: { attributes: [] },
+      },
+      {
+        model: Country,
+        as: 'countries', // ← tambahkan ini kalau belum ada
+        attributes: ['id', 'name'],
+        through: { attributes: [] }, // kalau pakai junction table movies_countries
       },
       {
         model: Person,
@@ -557,7 +566,7 @@ export class MoviesService {
     const { page, limit, search } = data;
 
     const whereBase: any = {
-      isPublish: true,
+      // isPublish: true,
       releasedAt: { [Op.lte]: new Date() },
     };
 
@@ -681,12 +690,12 @@ export class MoviesService {
 
     try {
       // ====== VALIDASI FOREIGN KEY ======
-      if (data.countryId) {
-        const country = await this.countryModel.findByPk(data.countryId, {
-          transaction,
-        });
-        if (!country) throw new NotFoundException('Country not found');
-      }
+      // if (data.countryId) {
+      //   const country = await this.countryModel.findByPk(data.countryId, {
+      //     transaction,
+      //   });
+      //   if (!country) throw new NotFoundException('Country not found');
+      // }
 
       if (data.ageRatingId) {
         const country = await this.ageRatingModel.findByPk(data.ageRatingId, {
@@ -739,7 +748,6 @@ export class MoviesService {
           fileId: data.fileId,
           videoId: data.videoId,
           ageRatingId: data.ageRatingId,
-          countryId: data.countryId,
           releasedAt: data.releasedAt,
         } as InferCreationAttributes<Movie>,
         { transaction },
@@ -818,6 +826,34 @@ export class MoviesService {
         );
       }
 
+      // ====== ASSOCIATE COUNTRIES ======
+      if (data.countries && data.countries.length > 0) {
+        await this.movieCountryModel.bulkCreate(
+          data.countries.map(
+            (g) =>
+              ({
+                movieId: movie.dataValues.id,
+                countryId: g.countryId,
+              }) as InferCreationAttributes<MovieCountry>,
+          ),
+          { transaction },
+        );
+      }
+
+      if (data.videoAlternatives && data.videoAlternatives.length > 0) {
+        await this.videoAlternativeModel.bulkCreate(
+          data.videoAlternatives.map(
+            (va) =>
+              ({
+                movieId: movie.dataValues.id,
+                provider: va.provider,
+                source: va.source,
+              }) as InferCreationAttributes<VideoAlternative>,
+          ),
+          { transaction },
+        );
+      }
+
       await transaction.commit();
       return { message: `${NAME} created successfully`, data: movie };
     } catch (error) {
@@ -835,12 +871,12 @@ export class MoviesService {
       if (!movie) throw new NotFoundException('Movie not found');
 
       // ====== VALIDASI FOREIGN KEY ======
-      if (data.countryId) {
-        const country = await this.countryModel.findByPk(data.countryId, {
-          transaction,
-        });
-        if (!country) throw new NotFoundException('Country not found');
-      }
+      // if (data.countryId) {
+      //   const country = await this.countryModel.findByPk(data.countryId, {
+      //     transaction,
+      //   });
+      //   if (!country) throw new NotFoundException('Country not found');
+      // }
 
       if (data.ageRatingId) {
         const ageRating = await this.ageRatingModel.findByPk(data.ageRatingId, {
@@ -901,7 +937,6 @@ export class MoviesService {
           fileId: data.fileId,
           videoId: data.videoId,
           ageRatingId: data.ageRatingId,
-          countryId: data.countryId,
           releasedAt: data.releasedAt,
         },
         { transaction },
@@ -1009,6 +1044,27 @@ export class MoviesService {
         }
       }
 
+      // ====== UPDATE GENRES ======
+      if (data.countries) {
+        await this.movieCountryModel.destroy({
+          where: { movieId: movie.dataValues.id },
+          transaction,
+        });
+
+        if (data.countries.length > 0) {
+          await this.movieCountryModel.bulkCreate(
+            data.countries.map(
+              (g) =>
+                ({
+                  movieId: movie.dataValues.id,
+                  countryId: g.countryId,
+                }) as InferCreationAttributes<MovieCountry>,
+            ),
+            { transaction },
+          );
+        }
+      }
+
       // ====== UPDATE PLAYERS ======
       if (data.videoAlternatives) {
         await this.videoAlternativeModel.destroy({
@@ -1053,13 +1109,19 @@ export class MoviesService {
     const limit = data.limit ?? 10;
 
     const mainMovie = await this.movieModel.findByPk(movieId, {
-      attributes: ['id', 'title', 'country_id', 'year_of_release'],
+      attributes: ['id', 'title', 'year_of_release'],
       include: [
         {
           model: Genre,
           as: 'genres',
           attributes: ['id'],
           through: { attributes: [] },
+        },
+        {
+          model: Country,
+          as: 'countries', // ← tambahkan ini kalau belum ada
+          attributes: ['id'],
+          through: { attributes: [] }, // kalau pakai junction table movies_countries
         },
         {
           model: Person,
@@ -1082,6 +1144,8 @@ export class MoviesService {
         }
         return [];
       }) || [];
+
+    const countryIds = mainMovie.dataValues.countries?.map((c) => c.id) || [];
 
     let titleWords: string[] = [];
 
@@ -1110,16 +1174,6 @@ export class MoviesService {
     if (titleConditions.length > 0) {
       orConditions.push({ [Op.or]: titleConditions });
     }
-
-    // Prioritas sedang: genre sama
-    // if (genreIds.length > 0) {
-    //   orConditions.push({ '$genres.id$': { [Op.in]: genreIds } });
-    // }
-
-    // // Prioritas sedang: person sama
-    // if (personIds.length > 0) {
-    //   orConditions.push({ '$persons.id$': { [Op.in]: personIds } });
-    // }
 
     // Prioritas 2: genre sama (pakai subquery)
     if (genreIds.length > 0) {
@@ -1154,15 +1208,41 @@ export class MoviesService {
     }
 
     // Prioritas rendah: country + tahun (opsional, hanya kalau keduanya ada)
-    if (mainMovie.dataValues.countryId && mainMovie.dataValues.yearOfRelease) {
-      const minYear = parseInt(mainMovie.dataValues.yearOfRelease) - 5;
-      const maxYear = parseInt(mainMovie.dataValues.yearOfRelease) + 5;
-      orConditions.push({
-        country_id: mainMovie.dataValues.countryId,
-        year_of_release: {
-          [Op.between]: [minYear.toString(), maxYear.toString()],
-        },
-      });
+    let minYear: number | undefined;
+    let maxYear: number | undefined;
+
+    if (
+      countryIds.length > 0 &&
+      mainMovie.dataValues.yearOfRelease &&
+      !isNaN(parseInt(mainMovie.dataValues.yearOfRelease))
+    ) {
+      const releaseYear = parseInt(mainMovie.dataValues.yearOfRelease);
+      minYear = releaseYear - 5;
+      maxYear = releaseYear + 5;
+    }
+
+    if (minYear !== undefined && maxYear !== undefined) {
+      orConditions.push(
+        Sequelize.and(
+          // subquery negara
+          Sequelize.where(
+            Sequelize.literal(`(
+          SELECT COUNT(*) 
+          FROM "movies_countries"
+          WHERE "movie_id" = "Movie"."id" 
+          AND "country_id" IN (${countryIds.map((id) => `'${id}'`).join(',')})
+        )`),
+            Op.gt,
+            0,
+          ),
+          // tahun
+          {
+            year_of_release: {
+              [Op.between]: [minYear.toString(), maxYear.toString()],
+            },
+          },
+        ),
+      );
     }
 
     const where: any = {
@@ -1218,6 +1298,25 @@ export class MoviesService {
             WHERE c."movie_id" = "Movie"."id" 
             AND c."person_id" IN (${personIds.length > 0 ? personIds.map((id) => `'${id}'`).join(',') : 'NULL'})
           ) THEN 3 ELSE 5 END`,
+          ),
+          'ASC',
+        ],
+
+        // Skor 4: punya negara yang sama DAN tahun mirip
+        [
+          Sequelize.literal(
+            minYear !== undefined &&
+              maxYear !== undefined &&
+              countryIds.length > 0
+              ? `CASE WHEN (
+            EXISTS (
+              SELECT 1 FROM "movies_countries" mc 
+              WHERE mc."movie_id" = "Movie"."id" 
+              AND mc."country_id" IN (${countryIds.map((id) => `'${id}'`).join(',')})
+            )
+            AND "Movie"."year_of_release" BETWEEN ${minYear} AND ${maxYear}
+          ) THEN 4 ELSE 10 END`
+              : '10',
           ),
           'ASC',
         ],
