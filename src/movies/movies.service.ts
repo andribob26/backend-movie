@@ -198,6 +198,7 @@ export class MoviesService {
       'updatedAt',
       'createdAt',
       'view7',
+      'type',
     ],
     include: [
       {
