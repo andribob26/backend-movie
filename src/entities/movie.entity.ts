@@ -4,6 +4,7 @@ import {
   ForeignKey,
   HasMany,
   HasOne,
+  Index,
   Model,
 } from 'sequelize-typescript';
 import {
@@ -47,6 +48,7 @@ export class Movie extends Model<
 
   @AllowNull(false)
   @Column(DataType.STRING)
+  @Index('idx_movie_title')
   title: string;
 
   @AllowNull(false)

@@ -22,6 +22,10 @@ export class Video extends Model<Video> {
   })
   declare id: string;
 
+  @AllowNull(true)
+  @Column(DataType.INTEGER)
+  tmdbId: number;
+
   @AllowNull(false)
   @Column(DataType.STRING)
   fileName: string;
