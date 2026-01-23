@@ -119,6 +119,34 @@ export class VideosService {
     }
   }
 
+  async findOneByIdTMDB(data: {
+    tmdbId: number;
+  }): Promise<BaseResponse<Video>> {
+    try {
+      const dataGenre = await this.videoModel.findOne({
+        where: { tmdbId: data.tmdbId },
+
+        attributes: [
+          'prefix',
+          'sprites',
+        ],
+      });
+
+      if (!dataGenre) {
+        throw new NotFoundException(
+          `${NAME} with TMDB_ID ${data.tmdbId} not found`,
+        );
+      }
+
+      return {
+        message: `${NAME} fetched successfully`,
+        data: dataGenre,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   generateToken({
     userAgent,
     allowedOrigin,

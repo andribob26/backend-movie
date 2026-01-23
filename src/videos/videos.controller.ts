@@ -65,6 +65,11 @@ export class VideosController {
     });
   }
 
+  @Get('tmdb/:tmdbId')
+  async findOneByIdTMDB(@Param('tmdbId') tmdbId: number) {
+    return await this.videosService.findOneByIdTMDB({ tmdbId });
+  }
+
   @Get(':fileName')
   async findOne(@Param('fileName') fileName: string) {
     return await this.videosService.findOne({ fileName });
