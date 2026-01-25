@@ -69,7 +69,7 @@ export class Movie extends Model<
 
   @AllowNull(true)
   @Column(DataType.STRING)
-  source: string | null;
+  quality: string | null;
 
   @AllowNull(true)
   @Column(DataType.STRING)

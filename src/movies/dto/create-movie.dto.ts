@@ -41,7 +41,7 @@ export class CreateMovieDto {
 
   @IsOptional()
   @IsString()
-  source?: string | null;
+  quality?: string | null;
 
   @IsOptional()
   @IsString()
