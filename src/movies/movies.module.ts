@@ -10,28 +10,25 @@ import { MovieGenre } from 'src/entities/movie-genre.entity';
 import { Video } from 'src/entities/video.entity';
 import { AgeRating } from 'src/entities/age-rating.entity';
 import { Subtitle } from 'src/entities/subtitle.entity';
-import { Character } from 'src/entities/character.entity';
 import { Comment } from 'src/entities/comment.entity';
 import { CommentAuthor } from 'src/entities/comment-author';
 import { CommentMeta } from 'src/entities/comment-meta';
-import { VideoAlternative } from 'src/entities/video-alternative.entity';
+
 import { DailyView } from 'src/entities/daily-views.entity';
 import { Season } from 'src/entities/season.entity';
 import { Episode } from 'src/entities/episode.entity';
 import { FeaturedMovie } from 'src/entities/featured-movie.entity';
-import { MovieCountry } from 'src/entities/movie-country.entity';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
+    HttpModule,
     SequelizeModule.forFeature([
       Movie,
       MovieGenre,
-      MovieCountry,
-      VideoAlternative,
       File,
       Country,
       Genre,
-      Character,
       Video,
       AgeRating,
       Subtitle,

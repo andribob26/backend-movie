@@ -100,46 +100,6 @@ export class InteractionsService {
     }
   }
 
-  // ── LIKE TOGGLE ───────────────────────────────────────────────────────
-  /**
-   * Toggle like/unlike (naik/turun totalLike)
-   */
-  async toggleLike(movieId: string, ip: string, userAgent: string) {
-    try {
-      const redis = await this.getRedisClient();
-      const uaHash = this.hashUA(userAgent);
-      const key = `like:${movieId}:${ip}:${uaHash}`;
-
-      const current = await redis.get(key);
-      const isCurrentlyLiked = current === '1';
-      const delta = isCurrentlyLiked ? -1 : 1;
-      const newStatus = isCurrentlyLiked ? '0' : '1';
-
-      // Update counter di DB
-      await this.movieModel.increment('totalLike', {
-        by: delta,
-        where: { id: movieId },
-      });
-
-      // Simpan status baru (expire 30 hari)
-      await redis.set(key, newStatus, 'EX', 2592000);
-
-      // Ambil totalLike terbaru untuk response
-      const updated = await this.movieModel.findByPk(movieId, {
-        attributes: ['totalLike'],
-      });
-
-      return {
-        success: true,
-        isLiked: newStatus === '1',
-        totalLike: updated?.totalLike ?? 0,
-      };
-    } catch (error) {
-      console.error('Error saat toggle like:', error);
-      return { success: false, message: 'Gagal toggle like' };
-    }
-  }
-
   // ── COMMENT ───────────────────────────────────────────────────────────
   /**
    * Tambah 1 ke totalComment (bisa ditambah rate limit kalau perlu)

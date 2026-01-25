@@ -35,6 +35,10 @@ export class Genre extends Model<
   declare id: string;
 
   @AllowNull(false)
+  @Column(DataType.INTEGER)
+  tmdbId: number;
+
+  @AllowNull(false)
   @Column({ type: DataType.STRING, unique: true })
   name: string;
 

@@ -10,19 +10,16 @@ import { FilesModule } from './files/files.module';
 import { FileCleansModule } from './file-cleans/file-cleans.module';
 import { BullModule } from '@nestjs/bullmq';
 import { AgeRatingsModule } from './age-ratings/age-ratings.module';
-import { PersonsModule } from './persons/persons.module';
 import { GenresModule } from './genres/genres.module';
 import { CountriesModule } from './countries/countries.module';
 import { SubtitlesModule } from './subtitles/subtitles.module';
 import { MovieGenresModule } from './movie-genres/movie-genres.module';
 import { CharactersModule } from './characters/characters.module';
 import { CommentsModule } from './comments/comments.module';
-import { VideoAlternativesModule } from './video-alternatives/video-alternatives.module';
 import { InteractionsModule } from './interactions/interactions.module';
 import { DailyViewsModule } from './daily-views/daily-views.module';
 import { BullBoardModule } from '@bull-board/nestjs';
 import { ExpressAdapter } from '@bull-board/express';
-import { MovieCountriesModule } from './movie-countries/movie-countries.module';
 
 @Module({
   imports: [
@@ -54,17 +51,14 @@ import { MovieCountriesModule } from './movie-countries/movie-countries.module';
     FilesModule,
     FileCleansModule,
     AgeRatingsModule,
-    PersonsModule,
     GenresModule,
     CountriesModule,
     SubtitlesModule,
     CharactersModule,
     MovieGenresModule,
     CommentsModule,
-    VideoAlternativesModule,
     InteractionsModule,
     DailyViewsModule,
-    MovieCountriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -22,13 +22,9 @@ import { File } from './file.entity';
 import { Video } from './video.entity';
 import { InferAttributes, InferCreationAttributes } from 'sequelize';
 import { AgeRating } from './age-rating.entity';
-import { Person } from './person.entity';
 import { Subtitle } from './subtitle.entity';
-import { Character } from './character.entity';
 import { Comment } from './comment.entity';
-import { VideoAlternative } from './video-alternative.entity';
 import { Season } from './season.entity';
-import { MovieCountry } from './movie-country.entity';
 @Table({
   tableName: 'movies',
   timestamps: true,
@@ -47,9 +43,17 @@ export class Movie extends Model<
   declare id: string;
 
   @AllowNull(false)
+  @Column(DataType.INTEGER)
+  tmdbId: number;
+
+  @AllowNull(false)
   @Column(DataType.STRING)
   @Index('idx_movie_title')
   title: string;
+
+  @AllowNull(true)
+  @Column(DataType.STRING)
+  tmdbPosterUrl: string | null;
 
   @AllowNull(false)
   @Column({ type: DataType.STRING, unique: true })
@@ -57,7 +61,11 @@ export class Movie extends Model<
 
   @AllowNull(true)
   @Column(DataType.FLOAT)
-  rating: number | null;
+  tmdbRating: number | null;
+
+  @AllowNull(true)
+  @Column(DataType.FLOAT)
+  imdbRating: number | null;
 
   @AllowNull(true)
   @Column(DataType.STRING)
@@ -68,8 +76,8 @@ export class Movie extends Model<
   resolution: string | null;
 
   @AllowNull(true)
-  @Column(DataType.STRING)
-  duration: string | null;
+  @Column(DataType.INTEGER)
+  duration: number | null;
 
   @AllowNull(true)
   @Column(DataType.STRING)
@@ -85,7 +93,7 @@ export class Movie extends Model<
 
   @AllowNull(true)
   @Column(DataType.STRING)
-  worldwideGross: string | null;
+  revenue: string | null;
 
   @AllowNull(true)
   @Column(DataType.STRING)
@@ -99,22 +107,19 @@ export class Movie extends Model<
   @BelongsTo(() => File)
   poster: File;
 
-  @ForeignKey(() => Video)
-  @AllowNull(true)
-  @Column(DataType.UUID)
-  videoId: string | null;
-
-  @BelongsTo(() => Video)
-  video: Video;
-
-  @HasMany(() => Character)
-  characters: Character[];
-
   @HasMany(() => Subtitle)
   subtitles: Subtitle[];
 
-  @BelongsToMany(() => Person, () => Character)
-  persons: Person[];
+  @BelongsToMany(() => Genre, () => MovieGenre)
+  genres: Genre[];
+
+  @ForeignKey(() => Country)
+  @AllowNull(true)
+  @Column(DataType.UUID)
+  countryId: string | null;
+
+  @BelongsTo(() => Country)
+  country: Country;
 
   @ForeignKey(() => AgeRating)
   @AllowNull(true)
@@ -124,19 +129,22 @@ export class Movie extends Model<
   @BelongsTo(() => AgeRating)
   ageRating: AgeRating;
 
-  @BelongsToMany(() => Genre, () => MovieGenre)
-  genres: Genre[];
+  @AllowNull(false)
+  @Default('movie')
+  @Column(DataType.ENUM('movie', 'series'))
+  type: 'movie' | 'series';
 
-  @BelongsToMany(() => Country, () => MovieCountry)
-  countries: Country[];
+  @AllowNull(true)
+  @Column(DataType.JSONB)
+  casts: any | null;
 
-  // @ForeignKey(() => Country)
-  // @AllowNull(true)
-  // @Column(DataType.UUID)
-  // countryId: string | null;
+  @AllowNull(true)
+  @Column(DataType.JSONB)
+  director: any | null;
 
-  // @BelongsTo(() => Country)
-  // country: Country;
+  @AllowNull(true)
+  @Column(DataType.DATE)
+  releasedAt: Date | null;
 
   // ===========================
   // Kolom tambahan untuk popularitas
@@ -159,15 +167,7 @@ export class Movie extends Model<
   @AllowNull(false)
   @Default(0)
   @Column(DataType.INTEGER)
-  totalLike: number;
-
-  @AllowNull(false)
-  @Default(0)
-  @Column(DataType.INTEGER)
   totalComment: number;
-
-  @HasMany(() => VideoAlternative)
-  videoAlternatives: VideoAlternative[];
 
   @AllowNull(false)
   @Default(0)
@@ -182,23 +182,8 @@ export class Movie extends Model<
   @Column(DataType.BOOLEAN)
   isPublish: boolean;
 
-  @AllowNull(true)
-  @Column(DataType.DATE)
-  releasedAt: Date | null;
-
-  @AllowNull(false)
-  @Default('movie')
-  @Column(DataType.ENUM('movie', 'series'))
-  type: 'movie' | 'series';
-
-  // Ganti menjadi:
-  @ForeignKey(() => Season)
-  @AllowNull(true)
-  @Column(DataType.UUID)
-  seasonId?: string | null;
-
-  @HasOne(() => Season)
-  season?: Season;
+  @HasMany(() => Season)
+  seasons?: Season[];
 
   @Column(DataType.DATE)
   declare createdAt: Date;

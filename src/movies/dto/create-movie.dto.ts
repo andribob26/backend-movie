@@ -8,14 +8,19 @@ import {
   IsDate,
   ValidateNested,
   IsBoolean,
+  IsObject,
 } from 'class-validator';
-import { AssocCharacterDto } from 'src/characters/dto/assoc-character.dto';
 import { AssocMovieGenreDto } from 'src/movie-genres/dto/assoc-movie-genre.dto';
-import { AssocVideoAlternativeDto } from 'src/video-alternatives/dto/assoc-video-alternative.dto';
 import { AssocSubtitleDto } from 'src/subtitles/dto/assoc-subtitle.dto';
-import { AssocMovieCountryDto } from 'src/movie-countries/dto/assoc-movie-country.dto';
 
 export class CreateMovieDto {
+  @IsNumber()
+  tmdbId: number;
+
+  @IsOptional()
+  @IsString()
+  tmdbPosterUrl?: string | null;
+
   @IsString()
   title: string;
 
@@ -28,7 +33,11 @@ export class CreateMovieDto {
 
   @IsOptional()
   @IsNumber()
-  rating?: number | null;
+  tmdbRating?: number | null;
+
+  @IsOptional()
+  @IsNumber()
+  imdbRating?: number | null;
 
   @IsOptional()
   @IsString()
@@ -43,6 +52,10 @@ export class CreateMovieDto {
   yearOfRelease?: string | null;
 
   @IsOptional()
+  @IsNumber()
+  duration?: number | null;
+
+  @IsOptional()
   @IsString()
   synopsis?: string | null;
 
@@ -52,7 +65,7 @@ export class CreateMovieDto {
 
   @IsOptional()
   @IsString()
-  worldwideGross?: string | null;
+  revenue?: string | null;
 
   @IsOptional()
   @IsString()
@@ -63,20 +76,10 @@ export class CreateMovieDto {
   fileId?: string | null;
 
   @IsOptional()
-  @IsUUID()
-  videoId: string | null;
-
-  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => AssocSubtitleDto)
   subtitles?: AssocSubtitleDto[] | null;
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => AssocCharacterDto)
-  characters?: AssocCharacterDto[] | null;
 
   @IsOptional()
   @IsArray()
@@ -89,16 +92,16 @@ export class CreateMovieDto {
   ageRatingId?: string | null;
 
   @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => AssocMovieCountryDto)
-  countries?: AssocMovieCountryDto[] | null;
+  @IsUUID()
+  countryId?: string | null;
 
   @IsOptional()
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => AssocVideoAlternativeDto)
-  videoAlternatives?: AssocVideoAlternativeDto[] | null;
+  casts?: any[] | null;
+
+  @IsOptional()
+  @IsObject()
+  director?: Record<string, any> | null;
 
   @IsOptional()
   @IsDate()

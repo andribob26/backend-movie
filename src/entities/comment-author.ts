@@ -7,7 +7,6 @@ import {
   PrimaryKey,
   Table,
 } from 'sequelize-typescript';
-import { Person } from './person.entity';
 import { Movie } from './movie.entity';
 import { InferAttributes, InferCreationAttributes } from 'sequelize';
 import { Comment } from './comment.entity';

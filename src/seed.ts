@@ -31,25 +31,26 @@ async function bootstrap() {
     //   },
     // );
 
-    // await Genre.bulkCreate(
-    //   genresJsonRaw.map((genre: any) => ({
-    //     name: genre.name,
-    //   })) as InferCreationAttributes<Genre>[],
-    //   {
-    //     updateOnDuplicate: ['name'], // field yang diupdate kalau duplikat
-    //   },
-    // );
-
-    await AgeRating.bulkCreate(
-      ageRatingsJsonRaw.map((aRating: any) => ({
-        name: aRating.name,
-        code: aRating.code,
-        category: aRating.category,
-      })) as InferCreationAttributes<AgeRating>[],
+    await Genre.bulkCreate(
+      genresJsonRaw.map((genre: any) => ({
+        tmdbId: genre.tmdbId,
+        name: genre.name,
+      })) as InferCreationAttributes<Genre>[],
       {
         updateOnDuplicate: ['name'], // field yang diupdate kalau duplikat
       },
     );
+
+    // await AgeRating.bulkCreate(
+    //   ageRatingsJsonRaw.map((aRating: any) => ({
+    //     name: aRating.name,
+    //     code: aRating.code,
+    //     category: aRating.category,
+    //   })) as InferCreationAttributes<AgeRating>[],
+    //   {
+    //     updateOnDuplicate: ['name'], // field yang diupdate kalau duplikat
+    //   },
+    // );
 
     console.log('Seeding done!');
   } catch (err) {

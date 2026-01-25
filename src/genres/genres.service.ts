@@ -45,7 +45,7 @@ export class GenresService {
 
     const queryOptions: any = {
       where,
-      attributes: ['id', 'name', 'updatedAt', 'createdAt'],
+      attributes: ['id', "tmdbId", 'name', 'updatedAt', 'createdAt'],
       order: [[orderField, orderDirection]],
     };
 

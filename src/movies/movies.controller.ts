@@ -360,4 +360,9 @@ export class MoviesController {
       },
     );
   }
+
+  @Get('tmdb/:tmdbId')
+  async getMovieTMDB(@Param('tmdbId') tmdbId: string) {
+    return await this.moviesService.getMovieWithCasts({ tmdbId });
+  }
 }

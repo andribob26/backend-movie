@@ -23,18 +23,20 @@ import { NodeHttpHandler } from '@smithy/node-http-handler';
 import * as https from 'https';
 import { Subtitle } from 'src/entities/subtitle.entity';
 import { MovieGenre } from 'src/entities/movie-genre.entity';
-import { Character } from 'src/entities/character.entity';
 import { PaginationResponse } from 'src/commons/interfaces/pagination-response.interface';
-import { Person } from 'src/entities/person.entity';
 import { UpdateMovieDto } from './dto/update-movie.dto';
-import { VideoAlternative } from 'src/entities/video-alternative.entity';
 import { FeaturedMovie } from 'src/entities/featured-movie.entity';
-import { MovieCountry } from 'src/entities/movie-country.entity';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 
 const NAME = 'Movie';
 
 @Injectable()
 export class MoviesService {
+  private readonly urlTMDB = 'https://api.themoviedb.org/3';
+  private readonly tokenTMDB =
+    'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI4YzEyMmVmMzE2NmI1MTAxNDczNTA0MDZmMjEwMjhjZSIsIm5iZiI6MTcyNTc2MjQyNy44OTYsInN1YiI6IjY2ZGQwYjdhODFlYTZiZjBmZDc4NzEzOCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.hAVV5g9v6St9q02WJyFOLIOiMRXXrm7eyjTmdzTelL0';
+
   private s3: S3Client;
   private bucket: string;
   constructor(
@@ -42,8 +44,6 @@ export class MoviesService {
     private readonly movieModel: typeof Movie,
     @InjectModel(FeaturedMovie)
     private readonly featuredMovieModel: typeof FeaturedMovie,
-    @InjectModel(Character)
-    private readonly characterModel: typeof Character,
     @InjectModel(Country)
     private readonly countryModel: typeof Country,
     @InjectModel(AgeRating)
@@ -56,160 +56,41 @@ export class MoviesService {
     private readonly subtitleModel: typeof Subtitle,
     @InjectModel(MovieGenre)
     private readonly movieGenreModel: typeof MovieGenre,
-    @InjectModel(MovieCountry)
-    private readonly movieCountryModel: typeof MovieCountry,
-    @InjectModel(VideoAlternative)
-    private readonly videoAlternativeModel: typeof VideoAlternative,
     private readonly sequelize: Sequelize,
-    private readonly configService: ConfigService,
-  ) {
-    const accessKeyId = this.configService.get('OBJECT_STORAGE_KEY');
-    const secretAccessKey = this.configService.get('OBJECT_STORAGE_SECRET');
-    const endpoint = this.configService.get('OBJECT_STORAGE_ENDPOINT');
-    const region = this.configService.get('OBJECT_STORAGE_REGION');
-    this.bucket = this.configService.get('OBJECT_STORAGE_BUCKET') ?? '';
-
-    if (!accessKeyId || !secretAccessKey || !endpoint) {
-      throw new Error(`Missing credentials for object storage`);
-    }
-
-    this.s3 = new S3Client({
-      region: region ?? 'auto',
-      endpoint,
-      credentials: { accessKeyId, secretAccessKey },
-      forcePathStyle: true,
-      requestHandler: new NodeHttpHandler({
-        httpsAgent: new https.Agent({
-          keepAlive: true,
-          maxSockets: 50,
-        }),
-      }),
-    });
-  }
-
-  private streamToString(stream: Readable): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const chunks: Buffer[] = [];
-      stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
-      stream.on('error', reject);
-      stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
-    });
-  }
-
-  private async getDurationFromS3(
-    bucket: string,
-    key: string,
-  ): Promise<string | null> {
-    try {
-      const command = new GetObjectCommand({ Bucket: bucket, Key: key });
-      const response = await this.s3.send(command);
-
-      if (!response.Body) {
-        throw new Error('Empty response body');
-      }
-
-      const content = await this.streamToString(response.Body as Readable);
-
-      const totalSeconds = content
-        .split('\n')
-        .filter((line) => line.startsWith('#EXTINF:'))
-        .map((line) =>
-          parseFloat(line.replace('#EXTINF:', '').replace(',', '').trim()),
-        )
-        .reduce((acc, val) => acc + val, 0);
-
-      if (!isFinite(totalSeconds) || totalSeconds <= 0) {
-        throw new Error('Invalid or empty EXTINF duration');
-      }
-
-      const rounded = Math.round(totalSeconds);
-      const hours = Math.floor(rounded / 3600);
-      const minutes = Math.floor((rounded % 3600) / 60);
-      const seconds = rounded % 60;
-
-      if (hours > 0) {
-        return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds
-          .toString()
-          .padStart(2, '0')}`;
-      }
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    } catch (err) {
-      console.log('error get duration', err);
-      return null;
-    }
-  }
-
-  private async findFirstPlaylist(prefix: string): Promise<string | null> {
-    let continuationToken: string | undefined = undefined;
-
-    do {
-      const command = new ListObjectsV2Command({
-        Bucket: this.bucket,
-        Prefix: `${prefix}/`,
-        ContinuationToken: continuationToken,
-      });
-
-      const response = (await this.s3.send(
-        command,
-      )) as ListObjectsV2CommandOutput;
-
-      if (response.Contents) {
-        // filter yang cuma index.m3u8
-        const playlist = response.Contents.find((obj: any) =>
-          obj.Key?.endsWith('index.m3u8'),
-        );
-        if (playlist?.Key) {
-          // pastikan file benar-benar ada (opsional)
-          try {
-            await this.s3.send(
-              new HeadObjectCommand({ Bucket: this.bucket, Key: playlist.Key }),
-            );
-            return playlist.Key;
-          } catch (err) {
-            // skip jika file somehow tidak ada
-          }
-        }
-      }
-
-      continuationToken = response.IsTruncated
-        ? response.NextContinuationToken
-        : undefined;
-    } while (continuationToken);
-
-    return null; // tidak ada playlist sama sekali
-  }
+    private readonly httpService: HttpService,
+  ) {}
 
   private opt = {
     attributes: [
       'id',
+      'tmdbId',
+      'tmdbPosterUrl',
       'title',
       'slug',
       'trailerUrl',
-      'rating',
+      'tmdbRating',
+      'imdbRating',
       'source',
       'resolution',
       'duration',
       'yearOfRelease',
       'synopsis',
       'budget',
-      'worldwideGross',
+      'revenue',
       'popularityScore',
       'releasedAt',
       'updatedAt',
       'createdAt',
       'view7',
       'type',
+      'director',
+      'casts',
     ],
     include: [
       {
         model: File,
         as: 'poster',
         attributes: ['id', 'fileName', 'folder', 'originalName', 'mimeType'],
-      },
-      {
-        model: Video,
-        as: 'video',
-        attributes: ['id', 'fileName', 'hlsObject', 'prefix'],
       },
       {
         model: Subtitle,
@@ -237,24 +118,13 @@ export class MoviesService {
       {
         model: Genre,
         as: 'genres',
-        attributes: ['id', 'name'],
+        attributes: ['id', 'tmdbId', 'name'],
         through: { attributes: [] },
       },
       {
         model: Country,
-        as: 'countries', // ← tambahkan ini kalau belum ada
+        as: 'country', // ← tambahkan ini kalau belum ada
         attributes: ['id', 'name', 'code'],
-        through: { attributes: [] }, // kalau pakai junction table movies_countries
-      },
-      {
-        model: Person,
-        as: 'persons',
-        attributes: ['id', 'name', 'position'],
-        through: {
-          model: Character,
-          as: 'character',
-          attributes: ['id', 'character', 'order'],
-        },
       },
     ],
   };
@@ -695,18 +565,21 @@ export class MoviesService {
 
     try {
       // ====== VALIDASI FOREIGN KEY ======
-      // if (data.countryId) {
-      //   const country = await this.countryModel.findByPk(data.countryId, {
-      //     transaction,
-      //   });
-      //   if (!country) throw new NotFoundException('Country not found');
-      // }
-
-      if (data.ageRatingId) {
-        const country = await this.ageRatingModel.findByPk(data.ageRatingId, {
+      if (data.countryId) {
+        const country = await this.countryModel.findByPk(data.countryId, {
           transaction,
         });
-        if (!country) throw new NotFoundException('Age Rating not found');
+        if (!country) throw new NotFoundException('Country not found');
+      }
+
+      if (data.ageRatingId) {
+        const ageRatingId = await this.ageRatingModel.findByPk(
+          data.ageRatingId,
+          {
+            transaction,
+          },
+        );
+        if (!ageRatingId) throw new NotFoundException('Age Rating not found');
       }
 
       if (data.fileId) {
@@ -717,43 +590,30 @@ export class MoviesService {
         await file.update({ isUsed: true }, { transaction });
       }
 
-      let duration: string | null = null;
-
-      if (data.videoId) {
-        const video = await this.videoModel.findByPk(data.videoId, {
-          transaction,
-        });
-        if (!video) throw new NotFoundException('Video not found');
-
-        const m3u8Key = await this.findFirstPlaylist(video.dataValues.prefix);
-        if (!m3u8Key) throw new Error('No HLS playlist found');
-
-        duration = await this.getDurationFromS3(this.bucket, m3u8Key);
-        console.log('Duration:', duration);
-
-        // const m3u8Key = `${video.dataValues.prefix}/240p/index.m3u8`;
-        // duration = await this.getDurationFromS3(this.bucket, m3u8Key);
-      }
-
       // ====== CREATE MOVIE ======
       const movie = await this.movieModel.create(
         {
+          tmdbId: data.tmdbId,
+          tmdbPosterUrl: data.tmdbPosterUrl,
           title: data.title,
           slug: data.slug,
           isPublish: data.isPublish,
-          rating: data.rating,
+          tmdbRating: data.tmdbRating,
+          imdbRating: data.imdbRating,
           source: data.source,
           resolution: data.resolution,
           yearOfRelease: data.yearOfRelease,
           synopsis: data.synopsis,
-          duration: duration,
+          duration: data.duration,
           budget: data.budget,
-          worldwideGross: data.worldwideGross,
+          revenue: data.revenue,
           trailerUrl: data.trailerUrl,
           fileId: data.fileId,
-          videoId: data.videoId,
           ageRatingId: data.ageRatingId,
+          countryId: data.countryId,
           releasedAt: data.releasedAt,
+          director: data.director,
+          casts: data.casts,
         } as InferCreationAttributes<Movie>,
         { transaction },
       );
@@ -787,22 +647,6 @@ export class MoviesService {
         }
       }
 
-      // ====== ASSOCIATE CHARACTERS ======
-      if (data.characters && data.characters.length > 0) {
-        await this.characterModel.bulkCreate(
-          data.characters.map(
-            (c) =>
-              ({
-                movieId: movie.dataValues.id,
-                personId: c.personId,
-                character: c.character,
-                order: c.order,
-              }) as InferCreationAttributes<Character>,
-          ),
-          { transaction },
-        );
-      }
-
       // ====== ASSOCIATE GENRES ======
       if (data.genres && data.genres.length > 0) {
         await this.movieGenreModel.bulkCreate(
@@ -812,48 +656,6 @@ export class MoviesService {
                 movieId: movie.dataValues.id,
                 genreId: g.genreId,
               }) as InferCreationAttributes<MovieGenre>,
-          ),
-          { transaction },
-        );
-      }
-
-      if (data.videoAlternatives && data.videoAlternatives.length > 0) {
-        await this.videoAlternativeModel.bulkCreate(
-          data.videoAlternatives.map(
-            (va) =>
-              ({
-                movieId: movie.dataValues.id,
-                provider: va.provider,
-                source: va.source,
-              }) as InferCreationAttributes<VideoAlternative>,
-          ),
-          { transaction },
-        );
-      }
-
-      // ====== ASSOCIATE COUNTRIES ======
-      if (data.countries && data.countries.length > 0) {
-        await this.movieCountryModel.bulkCreate(
-          data.countries.map(
-            (g) =>
-              ({
-                movieId: movie.dataValues.id,
-                countryId: g.countryId,
-              }) as InferCreationAttributes<MovieCountry>,
-          ),
-          { transaction },
-        );
-      }
-
-      if (data.videoAlternatives && data.videoAlternatives.length > 0) {
-        await this.videoAlternativeModel.bulkCreate(
-          data.videoAlternatives.map(
-            (va) =>
-              ({
-                movieId: movie.dataValues.id,
-                provider: va.provider,
-                source: va.source,
-              }) as InferCreationAttributes<VideoAlternative>,
           ),
           { transaction },
         );
@@ -876,12 +678,12 @@ export class MoviesService {
       if (!movie) throw new NotFoundException('Movie not found');
 
       // ====== VALIDASI FOREIGN KEY ======
-      // if (data.countryId) {
-      //   const country = await this.countryModel.findByPk(data.countryId, {
-      //     transaction,
-      //   });
-      //   if (!country) throw new NotFoundException('Country not found');
-      // }
+      if (data.countryId) {
+        const country = await this.countryModel.findByPk(data.countryId, {
+          transaction,
+        });
+        if (!country) throw new NotFoundException('Country not found');
+      }
 
       if (data.ageRatingId) {
         const ageRating = await this.ageRatingModel.findByPk(data.ageRatingId, {
@@ -907,42 +709,30 @@ export class MoviesService {
         await file.update({ isUsed: true }, { transaction });
       }
 
-      let duration = movie.dataValues.duration;
-
-      if (data.videoId && data.videoId !== movie.dataValues.videoId) {
-        const video = await this.videoModel.findByPk(data.videoId, {
-          transaction,
-        });
-        if (!video) throw new NotFoundException('Video not found');
-
-        const m3u8Key = await this.findFirstPlaylist(video.dataValues.prefix);
-        if (!m3u8Key) throw new Error('No HLS playlist found');
-
-        console.log(m3u8Key, 'm3u8Key m3u8Key m3u8Key m3u8Key');
-
-        duration = await this.getDurationFromS3(this.bucket, m3u8Key);
-        console.log('Duration:', duration);
-      }
-
       // ====== UPDATE MOVIE ======
       await movie.update(
         {
+          tmdbId: data.tmdbId,
+          tmdbPosterUrl: data.tmdbPosterUrl,
           title: data.title,
           slug: data.slug,
           isPublish: data.isPublish,
-          rating: data.rating,
+          tmdbRating: data.tmdbRating,
+          imdbRating: data.imdbRating,
           source: data.source,
           resolution: data.resolution,
           yearOfRelease: data.yearOfRelease,
           synopsis: data.synopsis,
-          duration,
+          duration: data.duration,
           budget: data.budget,
-          worldwideGross: data.worldwideGross,
+          revenue: data.revenue,
           trailerUrl: data.trailerUrl,
           fileId: data.fileId,
-          videoId: data.videoId,
           ageRatingId: data.ageRatingId,
+          countryId: data.countryId,
           releasedAt: data.releasedAt,
+          director: data.director,
+          casts: data.casts,
         },
         { transaction },
       );
@@ -1005,29 +795,6 @@ export class MoviesService {
         }
       }
 
-      // ====== UPDATE CHARACTERS ======
-      if (data.characters) {
-        await this.characterModel.destroy({
-          where: { movieId: movie.dataValues.id },
-          transaction,
-        });
-
-        if (data.characters.length > 0) {
-          await this.characterModel.bulkCreate(
-            data.characters.map(
-              (c) =>
-                ({
-                  movieId: movie.dataValues.id,
-                  personId: c.personId,
-                  character: c.character,
-                  order: c.order,
-                }) as InferCreationAttributes<Character>,
-            ),
-            { transaction },
-          );
-        }
-      }
-
       // ====== UPDATE GENRES ======
       if (data.genres) {
         await this.movieGenreModel.destroy({
@@ -1043,49 +810,6 @@ export class MoviesService {
                   movieId: movie.dataValues.id,
                   genreId: g.genreId,
                 }) as InferCreationAttributes<MovieGenre>,
-            ),
-            { transaction },
-          );
-        }
-      }
-
-      // ====== UPDATE GENRES ======
-      if (data.countries) {
-        await this.movieCountryModel.destroy({
-          where: { movieId: movie.dataValues.id },
-          transaction,
-        });
-
-        if (data.countries.length > 0) {
-          await this.movieCountryModel.bulkCreate(
-            data.countries.map(
-              (g) =>
-                ({
-                  movieId: movie.dataValues.id,
-                  countryId: g.countryId,
-                }) as InferCreationAttributes<MovieCountry>,
-            ),
-            { transaction },
-          );
-        }
-      }
-
-      // ====== UPDATE PLAYERS ======
-      if (data.videoAlternatives) {
-        await this.videoAlternativeModel.destroy({
-          where: { movieId: movie.dataValues.id },
-          transaction,
-        });
-
-        if (data.videoAlternatives.length > 0) {
-          await this.videoAlternativeModel.bulkCreate(
-            data.videoAlternatives.map(
-              (va) =>
-                ({
-                  movieId: movie.dataValues.id,
-                  provider: va.provider,
-                  source: va.source,
-                }) as InferCreationAttributes<VideoAlternative>,
             ),
             { transaction },
           );
@@ -1114,24 +838,13 @@ export class MoviesService {
     const limit = data.limit ?? 10;
 
     const mainMovie = await this.movieModel.findByPk(movieId, {
-      attributes: ['id', 'title', 'year_of_release'],
+      attributes: ['id', 'title', 'year_of_release', 'countryId'],
       include: [
         {
           model: Genre,
           as: 'genres',
           attributes: ['id'],
           through: { attributes: [] },
-        },
-        {
-          model: Country,
-          as: 'countries', // ← tambahkan ini kalau belum ada
-          attributes: ['id'],
-          through: { attributes: [] }, // kalau pakai junction table movies_countries
-        },
-        {
-          model: Person,
-          as: 'persons',
-          attributes: ['id', 'position'],
         },
       ],
     });
@@ -1141,16 +854,16 @@ export class MoviesService {
     }
 
     const genreIds = mainMovie.dataValues.genres?.map((g) => g.id) || [];
-    const personIds =
-      mainMovie.dataValues.persons?.flatMap((p) => {
-        const isDirector = p.dataValues.position === 'Director';
-        if (isDirector) {
-          return [p.id];
-        }
-        return [];
-      }) || [];
+    // const personIds =
+    //   mainMovie.dataValues.persons?.flatMap((p) => {
+    //     const isDirector = p.dataValues.position === 'Director';
+    //     if (isDirector) {
+    //       return [p.id];
+    //     }
+    //     return [];
+    //   }) || [];
 
-    const countryIds = mainMovie.dataValues.countries?.map((c) => c.id) || [];
+    const countryId = mainMovie.dataValues.countryId || null;
 
     let titleWords: string[] = [];
 
@@ -1197,27 +910,27 @@ export class MoviesService {
     }
 
     // Prioritas 3: person sama (aktor/director)
-    if (personIds.length > 0) {
-      orConditions.push(
-        Sequelize.where(
-          Sequelize.literal(`(
-          SELECT COUNT(*) 
-          FROM "characters" 
-          WHERE "movie_id" = "Movie"."id" 
-          AND "person_id" IN (${personIds.map((id) => `'${id}'`).join(',')})
-        )`),
-          Op.gt,
-          0,
-        ),
-      );
-    }
+    // if (personIds.length > 0) {
+    //   orConditions.push(
+    //     Sequelize.where(
+    //       Sequelize.literal(`(
+    //       SELECT COUNT(*)
+    //       FROM "characters"
+    //       WHERE "movie_id" = "Movie"."id"
+    //       AND "person_id" IN (${personIds.map((id) => `'${id}'`).join(',')})
+    //     )`),
+    //       Op.gt,
+    //       0,
+    //     ),
+    //   );
+    // }
 
     // Prioritas rendah: country + tahun (opsional, hanya kalau keduanya ada)
     let minYear: number | undefined;
     let maxYear: number | undefined;
 
     if (
-      countryIds.length > 0 &&
+      countryId &&
       mainMovie.dataValues.yearOfRelease &&
       !isNaN(parseInt(mainMovie.dataValues.yearOfRelease))
     ) {
@@ -1226,21 +939,12 @@ export class MoviesService {
       maxYear = releaseYear + 5;
     }
 
-    if (minYear !== undefined && maxYear !== undefined) {
+    if (minYear !== undefined && maxYear !== undefined && countryId) {
       orConditions.push(
         Sequelize.and(
-          // subquery negara
-          Sequelize.where(
-            Sequelize.literal(`(
-          SELECT COUNT(*) 
-          FROM "movies_countries"
-          WHERE "movie_id" = "Movie"."id" 
-          AND "country_id" IN (${countryIds.map((id) => `'${id}'`).join(',')})
-        )`),
-            Op.gt,
-            0,
-          ),
-          // tahun
+          {
+            countryId: countryId,
+          },
           {
             year_of_release: {
               [Op.between]: [minYear.toString(), maxYear.toString()],
@@ -1296,31 +1000,25 @@ export class MoviesService {
         ],
 
         // Person skor 3
-        [
-          Sequelize.literal(
-            `CASE WHEN EXISTS (
-            SELECT 1 FROM "characters" c 
-            WHERE c."movie_id" = "Movie"."id" 
-            AND c."person_id" IN (${personIds.length > 0 ? personIds.map((id) => `'${id}'`).join(',') : 'NULL'})
-          ) THEN 3 ELSE 5 END`,
-          ),
-          'ASC',
-        ],
+        // [
+        //   Sequelize.literal(
+        //     `CASE WHEN EXISTS (
+        //     SELECT 1 FROM "characters" c
+        //     WHERE c."movie_id" = "Movie"."id"
+        //     AND c."person_id" IN (${personIds.length > 0 ? personIds.map((id) => `'${id}'`).join(',') : 'NULL'})
+        //   ) THEN 3 ELSE 5 END`,
+        //   ),
+        //   'ASC',
+        // ],
 
         // Skor 4: punya negara yang sama DAN tahun mirip
         [
           Sequelize.literal(
-            minYear !== undefined &&
-              maxYear !== undefined &&
-              countryIds.length > 0
+            minYear !== undefined && maxYear !== undefined && countryId
               ? `CASE WHEN (
-            EXISTS (
-              SELECT 1 FROM "movies_countries" mc 
-              WHERE mc."movie_id" = "Movie"."id" 
-              AND mc."country_id" IN (${countryIds.map((id) => `'${id}'`).join(',')})
-            )
-            AND "Movie"."year_of_release" BETWEEN ${minYear} AND ${maxYear}
-          ) THEN 4 ELSE 10 END`
+          "Movie"."country_id" = '${countryId}'
+          AND "Movie"."year_of_release" BETWEEN ${minYear} AND ${maxYear}
+        ) THEN 4 ELSE 10 END`
               : '10',
           ),
           'ASC',
@@ -1336,6 +1034,44 @@ export class MoviesService {
     return {
       message: 'Related movies fetched successfully',
       data: relatedMovies || [],
+    };
+  }
+
+  async getMovieWithCasts(data: {
+    tmdbId: string;
+  }): Promise<BaseResponse<any>> {
+    const headers = {
+      accept: 'application/json',
+      Authorization: this.tokenTMDB,
+    };
+
+    // request movie detail
+    const movieRequest = this.httpService.get(
+      `${this.urlTMDB}/movie/${data.tmdbId}?language=en-US&append_to_response=release_dates`,
+      { headers },
+    );
+
+    // request credits
+    const creditsRequest = this.httpService.get(
+      `${this.urlTMDB}/movie/${data.tmdbId}/credits?language=en-US`,
+      { headers },
+    );
+
+    // run both requests in parallel
+    const [movieRes, creditsRes] = await Promise.all([
+      firstValueFrom(movieRequest),
+      firstValueFrom(creditsRequest),
+    ]);
+
+    return {
+      message: 'TMDB movies fetched successfully',
+      data: {
+        ...movieRes.data,
+        casts: creditsRes.data.cast.slice(0, 10), // ambil 10 cast pertama
+        crews: creditsRes.data.crew.filter(
+          (crew: any) => crew.job === 'Director',
+        ),
+      },
     };
   }
 }

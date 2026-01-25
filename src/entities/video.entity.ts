@@ -53,10 +53,6 @@ export class Video extends Model<Video> {
   @Column(DataType.JSONB)
   sprites: string[];
 
-  @Default(false)
-  @Column(DataType.BOOLEAN)
-  isUsed: boolean;
-
   @AllowNull(true)
   @Column(DataType.JSONB)
   uploadedFiles?: string[] | null;
