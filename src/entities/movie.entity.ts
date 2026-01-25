@@ -43,7 +43,7 @@ export class Movie extends Model<
   declare id: string;
 
   @AllowNull(false)
-  @Column(DataType.INTEGER)
+  @Column({ type: DataType.INTEGER, unique: true })
   tmdbId: number;
 
   @AllowNull(false)
