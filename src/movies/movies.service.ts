@@ -36,6 +36,8 @@ export class MoviesService {
   private readonly urlTMDB = 'https://api.themoviedb.org/3';
   private readonly tokenTMDB =
     'Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI4YzEyMmVmMzE2NmI1MTAxNDczNTA0MDZmMjEwMjhjZSIsIm5iZiI6MTcyNTc2MjQyNy44OTYsInN1YiI6IjY2ZGQwYjdhODFlYTZiZjBmZDc4NzEzOCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.hAVV5g9v6St9q02WJyFOLIOiMRXXrm7eyjTmdzTelL0';
+  private readonly tokenIMDB =
+    'apikey 11j6gVq3zScIhM2iuDCFSw:4GbrWLVyuPTQOiA0o7LLKb';
 
   private s3: S3Client;
   private bucket: string;
@@ -64,7 +66,9 @@ export class MoviesService {
     attributes: [
       'id',
       'tmdbId',
+      'imdbId',
       'tmdbPosterUrl',
+      'tmdbBackDropUrl',
       'title',
       'slug',
       'trailerUrl',
@@ -85,6 +89,7 @@ export class MoviesService {
       'type',
       'director',
       'casts',
+      'isPublish',
     ],
     include: [
       {
@@ -594,7 +599,9 @@ export class MoviesService {
       const movie = await this.movieModel.create(
         {
           tmdbId: data.tmdbId,
+          imdbId: data.imdbId,
           tmdbPosterUrl: data.tmdbPosterUrl,
+          tmdbBackDropUrl: data.tmdbBackDropUrl,
           title: data.title,
           slug: data.slug,
           isPublish: data.isPublish,
@@ -713,7 +720,9 @@ export class MoviesService {
       await movie.update(
         {
           tmdbId: data.tmdbId,
+          imdbId: data.imdbId,
           tmdbPosterUrl: data.tmdbPosterUrl,
+          tmdbBackDropUrl: data.tmdbBackDropUrl,
           title: data.title,
           slug: data.slug,
           isPublish: data.isPublish,
@@ -1037,40 +1046,80 @@ export class MoviesService {
     };
   }
 
-  async getMovieWithCasts(data: {
-    tmdbId: string;
-  }): Promise<BaseResponse<any>> {
+  async getMovie(data: { tmdbId: string }): Promise<BaseResponse<any>> {
     const headers = {
       accept: 'application/json',
       Authorization: this.tokenTMDB,
     };
 
-    // request movie detail
     const movieRequest = this.httpService.get(
-      `${this.urlTMDB}/movie/${data.tmdbId}?language=en-US&append_to_response=release_dates`,
+      `${this.urlTMDB}/movie/${data.tmdbId}?language=en-US&append_to_response=release_dates,credits,videos`,
       { headers },
     );
 
-    // request credits
-    const creditsRequest = this.httpService.get(
-      `${this.urlTMDB}/movie/${data.tmdbId}/credits?language=en-US`,
-      { headers },
+    // const movieIMDBRequest = this.httpService.get(
+    //   `${this.urlTMDB}/movie/${data.tmdbId}?language=en-US&append_to_response=release_dates,credits,videos`,
+    //   { headers },
+    // );
+
+    const movieRes = await firstValueFrom(
+      this.httpService.get(
+        `${this.urlTMDB}/movie/${data.tmdbId}?language=en-US&append_to_response=release_dates,credits,videos`,
+        { headers },
+      ),
     );
 
-    // run both requests in parallel
-    const [movieRes, creditsRes] = await Promise.all([
-      firstValueFrom(movieRequest),
-      firstValueFrom(creditsRequest),
-    ]);
+    // const [movieRes] = await Promise.all([firstValueFrom(movieRequest)]);
+
+    const { credits, videos, release_dates, ...movieData } = movieRes.data;
+
+    // ambil trailer YouTube pertama
+    const trailer =
+      videos?.results?.find(
+        (v: any) => v.site === 'YouTube' && v.type === 'Trailer',
+      ) ?? null;
+
+    // ambil release_dates untuk US, hanya item pertama
+    const usRelease =
+      release_dates?.results?.find((r: any) => r.iso_3166_1 === 'US')
+        ?.release_dates?.[0] ?? null;
+
+    const imdbId = movieRes.data.imdb_id; // contoh: "tt1375666"
+
+    const imdbResponse = await firstValueFrom(
+      this.httpService.get(`https://api.imdbapi.dev/titles/${imdbId}`, {
+        headers: {
+          'content-type': 'application/json',
+        },
+      }),
+    );
+
+    const imdbData = imdbResponse.data;
+
+    // console.log(imdbData, 'data imdb');
 
     return {
       message: 'TMDB movies fetched successfully',
       data: {
-        ...movieRes.data,
-        casts: creditsRes.data.cast.slice(0, 10), // ambil 10 cast pertama
-        crews: creditsRes.data.crew.filter(
-          (crew: any) => crew.job === 'Director',
-        ),
+        ...movieData,
+        imdb_rating: imdbData.rating,
+        casts: credits.cast.slice(0, 10),
+        crews: credits.crew.filter((crew: any) => crew.job === 'Director'),
+        trailer: trailer
+          ? {
+              name: trailer.name,
+              key: trailer.key,
+              url: `https://www.youtube.com/watch?v=${trailer.key}`,
+            }
+          : null,
+        releaseUS: usRelease
+          ? {
+              date: usRelease.release_date,
+              certification: usRelease.certification,
+              type: usRelease.type,
+              note: usRelease.note,
+            }
+          : null,
       },
     };
   }

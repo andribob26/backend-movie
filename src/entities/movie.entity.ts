@@ -46,6 +46,10 @@ export class Movie extends Model<
   @Column({ type: DataType.INTEGER, unique: true })
   tmdbId: number;
 
+  @AllowNull(true)
+  @Column({ type: DataType.STRING, unique: true })
+  imdbId: string | null;
+
   @AllowNull(false)
   @Column(DataType.STRING)
   @Index('idx_movie_title')
@@ -54,6 +58,10 @@ export class Movie extends Model<
   @AllowNull(true)
   @Column(DataType.STRING)
   tmdbPosterUrl: string | null;
+
+  @AllowNull(true)
+  @Column(DataType.STRING)
+  tmdbBackDropUrl: string | null;
 
   @AllowNull(false)
   @Column({ type: DataType.STRING, unique: true })

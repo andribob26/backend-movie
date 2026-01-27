@@ -19,7 +19,15 @@ export class CreateMovieDto {
 
   @IsOptional()
   @IsString()
+  imdbId: string;
+
+  @IsOptional()
+  @IsString()
   tmdbPosterUrl?: string | null;
+
+  @IsOptional()
+  @IsString()
+  tmdbBackDropUrl?: string | null;
 
   @IsString()
   title: string;

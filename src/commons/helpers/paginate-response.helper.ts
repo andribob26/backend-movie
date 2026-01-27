@@ -16,7 +16,6 @@ export interface PaginationResult<T> {
     prev: string | null;
   };
   statusCode?: number;
-
 }
 
 export function buildPaginationResponse<T>(
@@ -25,7 +24,7 @@ export function buildPaginationResponse<T>(
   data: T[],
   meta: PaginationMeta,
 ): PaginationResult<T> {
-  const baseUrl = `${req.protocol}://${req.get('host')}${req.baseUrl}`;
+  const baseUrl = `${req.protocol}://${req.get('host')}${req.baseUrl}/api`;
   const makePageLink = (p: number) =>
     `${baseUrl}?page=${p}&limit=${meta.limit}`;
 

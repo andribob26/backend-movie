@@ -23,8 +23,12 @@ export class Video extends Model<Video> {
   declare id: string;
 
   @AllowNull(true)
-  @Column(DataType.INTEGER)
-  tmdbId: number;
+  @Column({ type: DataType.INTEGER, unique: true })
+  tmdbId: number | null;
+
+  @AllowNull(true)
+  @Column({ type: DataType.STRING, unique: true })
+  imdbId: string | null;
 
   @AllowNull(false)
   @Column(DataType.STRING)
