@@ -135,16 +135,10 @@ export class VideosService {
         attributes: ['hydraxSlug'],
       });
 
-      if (!dataVideo) {
-        throw new NotFoundException(
-          `${NAME} with TMDB_ID ${data.tmdbId} not found`,
-        );
-      }
-
       return {
         message: `${NAME} fetched successfully`,
         data: {
-          ...dataVideo.dataValues,
+          ...(dataVideo?.dataValues ?? { prefix: null, sprites: null }),
           hydraxSlug: dataMovie?.dataValues?.hydraxSlug ?? null,
         },
       };
@@ -155,26 +149,19 @@ export class VideosService {
 
   async findOneByIdIMDB(data: { imdbId: string }): Promise<BaseResponse<any>> {
     try {
+      const dataMovie = await this.movieModel.findOne({
+        where: { imdbId: data.imdbId },
+        attributes: ['hydraxSlug'],
+      });
       const dataVideo = await this.videoModel.findOne({
         where: { imdbId: data.imdbId },
         attributes: ['prefix', 'sprites'],
       });
 
-      const dataMovie = await this.movieModel.findOne({
-        where: { imdbId: data.imdbId },
-        attributes: ['hydraxSlug'],
-      });
-
-      if (!dataVideo) {
-        throw new NotFoundException(
-          `${NAME} with IMDB_ID ${data.imdbId} not found`,
-        );
-      }
-
       return {
         message: `${NAME} fetched successfully`,
         data: {
-          ...dataVideo.dataValues,
+          ...(dataVideo?.dataValues ?? { prefix: null, sprites: null }),
           hydraxSlug: dataMovie?.dataValues?.hydraxSlug ?? null,
         },
       };
