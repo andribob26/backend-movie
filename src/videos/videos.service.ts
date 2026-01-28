@@ -6,6 +6,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { BaseResponse } from 'src/commons/interfaces/base-response.interface';
 import { ConfigService } from '@nestjs/config';
 import { sign } from 'jsonwebtoken';
+import { Movie } from 'src/entities/movie.entity';
 
 const NAME = 'Video';
 
@@ -14,6 +15,8 @@ export class VideosService {
   constructor(
     @InjectModel(Video)
     private readonly videoModel: typeof Video,
+    @InjectModel(Movie)
+    private readonly movieModel: typeof Movie,
     private readonly configService: ConfigService,
   ) {}
   async findAll(data: {
@@ -119,17 +122,20 @@ export class VideosService {
     }
   }
 
-  async findOneByIdTMDB(data: {
-    tmdbId: number;
-  }): Promise<BaseResponse<Video>> {
+  async findOneByIdTMDB(data: { tmdbId: number }): Promise<BaseResponse<any>> {
     try {
-      const dataGenre = await this.videoModel.findOne({
+      const dataVideo = await this.videoModel.findOne({
         where: { tmdbId: data.tmdbId },
 
         attributes: ['prefix', 'sprites'],
       });
 
-      if (!dataGenre) {
+      const dataMovie = await this.movieModel.findOne({
+        where: { tmdbId: data.tmdbId },
+        attributes: ['hydraxSlug'],
+      });
+
+      if (!dataVideo) {
         throw new NotFoundException(
           `${NAME} with TMDB_ID ${data.tmdbId} not found`,
         );
@@ -137,24 +143,29 @@ export class VideosService {
 
       return {
         message: `${NAME} fetched successfully`,
-        data: dataGenre,
+        data: {
+          ...dataVideo,
+          hydraxSlug: dataMovie?.dataValues?.hydraxSlug ?? null,
+        },
       };
     } catch (error) {
       throw error;
     }
   }
 
-  async findOneByIdIMDB(data: {
-    imdbId: string;
-  }): Promise<BaseResponse<Video>> {
+  async findOneByIdIMDB(data: { imdbId: string }): Promise<BaseResponse<any>> {
     try {
-      const dataGenre = await this.videoModel.findOne({
+      const dataVideo = await this.videoModel.findOne({
         where: { imdbId: data.imdbId },
-
         attributes: ['prefix', 'sprites'],
       });
 
-      if (!dataGenre) {
+      const dataMovie = await this.movieModel.findOne({
+        where: { imdbId: data.imdbId },
+        attributes: ['hydraxSlug'],
+      });
+
+      if (!dataVideo) {
         throw new NotFoundException(
           `${NAME} with IMDB_ID ${data.imdbId} not found`,
         );
@@ -162,7 +173,10 @@ export class VideosService {
 
       return {
         message: `${NAME} fetched successfully`,
-        data: dataGenre,
+        data: {
+          ...dataVideo,
+          hydraxSlug: dataMovie?.dataValues?.hydraxSlug ?? null,
+        },
       };
     } catch (error) {
       throw error;

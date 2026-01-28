@@ -23,6 +23,10 @@ export class CreateMovieDto {
 
   @IsOptional()
   @IsString()
+  hydraxSlug: string;
+
+  @IsOptional()
+  @IsString()
   tmdbPosterUrl?: string | null;
 
   @IsOptional()

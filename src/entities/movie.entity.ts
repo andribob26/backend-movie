@@ -50,6 +50,10 @@ export class Movie extends Model<
   @Column({ type: DataType.STRING, unique: true })
   imdbId: string | null;
 
+  @AllowNull(true)
+  @Column({ type: DataType.STRING, unique: true })
+  hydraxSlug: string | null;
+
   @AllowNull(false)
   @Column(DataType.STRING)
   @Index('idx_movie_title')
