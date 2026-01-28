@@ -52,6 +52,10 @@ export class Movie extends Model<
 
   @AllowNull(true)
   @Column({ type: DataType.STRING, unique: true })
+  castSlug: string | null;
+
+  @AllowNull(true)
+  @Column({ type: DataType.STRING, unique: true })
   hydraxSlug: string | null;
 
   @AllowNull(false)

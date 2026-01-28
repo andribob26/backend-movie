@@ -67,6 +67,7 @@ export class MoviesService {
       'id',
       'tmdbId',
       'imdbId',
+      'castSlug',
       'hydraxSlug',
       'tmdbPosterUrl',
       'tmdbBackDropUrl',
@@ -601,6 +602,7 @@ export class MoviesService {
         {
           tmdbId: data.tmdbId,
           imdbId: data.imdbId,
+          castSlug: data.castSlug,
           hydraxSlug: data.hydraxSlug,
           tmdbPosterUrl: data.tmdbPosterUrl,
           tmdbBackDropUrl: data.tmdbBackDropUrl,
@@ -723,6 +725,7 @@ export class MoviesService {
         {
           tmdbId: data.tmdbId,
           imdbId: data.imdbId,
+          castSlug: data.castSlug,
           hydraxSlug: data.hydraxSlug,
           tmdbPosterUrl: data.tmdbPosterUrl,
           tmdbBackDropUrl: data.tmdbBackDropUrl,

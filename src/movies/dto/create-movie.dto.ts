@@ -23,6 +23,10 @@ export class CreateMovieDto {
 
   @IsOptional()
   @IsString()
+  castSlug: string;
+
+  @IsOptional()
+  @IsString()
   hydraxSlug: string;
 
   @IsOptional()
