@@ -144,7 +144,7 @@ export class VideosService {
       return {
         message: `${NAME} fetched successfully`,
         data: {
-          ...dataVideo,
+          ...dataVideo.dataValues,
           hydraxSlug: dataMovie?.dataValues?.hydraxSlug ?? null,
         },
       };
@@ -174,7 +174,7 @@ export class VideosService {
       return {
         message: `${NAME} fetched successfully`,
         data: {
-          ...dataVideo,
+          ...dataVideo.dataValues,
           hydraxSlug: dataMovie?.dataValues?.hydraxSlug ?? null,
         },
       };
