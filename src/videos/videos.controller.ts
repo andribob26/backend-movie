@@ -70,6 +70,11 @@ export class VideosController {
     return await this.videosService.findOneByIdTMDB({ tmdbId });
   }
 
+  @Get('imdb/:imdbId')
+  async findOneByIdIMDB(@Param('imdbId') imdbId: string) {
+    return await this.videosService.findOneByIdIMDB({ imdbId });
+  }
+
   @Get(':fileName')
   async findOne(@Param('fileName') fileName: string) {
     return await this.videosService.findOne({ fileName });

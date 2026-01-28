@@ -126,15 +126,37 @@ export class VideosService {
       const dataGenre = await this.videoModel.findOne({
         where: { tmdbId: data.tmdbId },
 
-        attributes: [
-          'prefix',
-          'sprites',
-        ],
+        attributes: ['prefix', 'sprites'],
       });
 
       if (!dataGenre) {
         throw new NotFoundException(
           `${NAME} with TMDB_ID ${data.tmdbId} not found`,
+        );
+      }
+
+      return {
+        message: `${NAME} fetched successfully`,
+        data: dataGenre,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async findOneByIdIMDB(data: {
+    imdbId: string;
+  }): Promise<BaseResponse<Video>> {
+    try {
+      const dataGenre = await this.videoModel.findOne({
+        where: { imdbId: data.imdbId },
+
+        attributes: ['prefix', 'sprites'],
+      });
+
+      if (!dataGenre) {
+        throw new NotFoundException(
+          `${NAME} with IMDB_ID ${data.imdbId} not found`,
         );
       }
 
