@@ -52,7 +52,7 @@ export class Movie extends Model<
 
   @AllowNull(true)
   @Column({ type: DataType.STRING, unique: true })
-  castSlug: string | null;
+  byseSlug: string | null;
 
   @AllowNull(true)
   @Column({ type: DataType.STRING, unique: true })

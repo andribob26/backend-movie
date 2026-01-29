@@ -23,7 +23,7 @@ export class CreateMovieDto {
 
   @IsOptional()
   @IsString()
-  castSlug: string;
+  byseSlug: string;
 
   @IsOptional()
   @IsString()

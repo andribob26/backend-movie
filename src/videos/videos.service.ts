@@ -126,7 +126,7 @@ export class VideosService {
     try {
       const dataMovie = await this.movieModel.findOne({
         where: { tmdbId: data.tmdbId },
-        attributes: ['hydraxSlug', 'castSlug'],
+        attributes: ['hydraxSlug', 'byseSlug'],
       });
       const dataVideo = await this.videoModel.findOne({
         where: { tmdbId: data.tmdbId },
@@ -138,7 +138,7 @@ export class VideosService {
         message: `${NAME} fetched successfully`,
         data: {
           ...(dataVideo?.dataValues ?? { prefix: null, sprites: null }),
-          castSlug: dataMovie?.dataValues?.castSlug ?? null,
+          byseSlug: dataMovie?.dataValues?.byseSlug ?? null,
           hydraxSlug: dataMovie?.dataValues?.hydraxSlug ?? null,
         },
       };
@@ -151,7 +151,7 @@ export class VideosService {
     try {
       const dataMovie = await this.movieModel.findOne({
         where: { imdbId: data.imdbId },
-        attributes: ['hydraxSlug', 'castSlug'],
+        attributes: ['hydraxSlug', 'byseSlug'],
       });
       const dataVideo = await this.videoModel.findOne({
         where: { imdbId: data.imdbId },
@@ -162,7 +162,7 @@ export class VideosService {
         message: `${NAME} fetched successfully`,
         data: {
           ...(dataVideo?.dataValues ?? { prefix: null, sprites: null }),
-          castSlug: dataMovie?.dataValues?.castSlug ?? null,
+          byseSlug: dataMovie?.dataValues?.byseSlug ?? null,
           hydraxSlug: dataMovie?.dataValues?.hydraxSlug ?? null,
         },
       };
