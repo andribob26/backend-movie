@@ -126,7 +126,7 @@ export class VideosService {
     try {
       const dataMovie = await this.movieModel.findOne({
         where: { tmdbId: data.tmdbId },
-        attributes: ['hydraxSlug', 'byseSlug'],
+        attributes: ['hydraxSlug', 'byseSlug', 'type'],
       });
       const dataVideo = await this.videoModel.findOne({
         where: { tmdbId: data.tmdbId },
@@ -152,7 +152,7 @@ export class VideosService {
     try {
       const dataMovie = await this.movieModel.findOne({
         where: { imdbId: data.imdbId },
-        attributes: ['hydraxSlug', 'byseSlug'],
+        attributes: ['hydraxSlug', 'byseSlug', 'type'],
       });
       const dataVideo = await this.videoModel.findOne({
         where: { imdbId: data.imdbId },
