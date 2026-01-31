@@ -1109,7 +1109,7 @@ export class MoviesService {
       data: {
         ...movieData,
         imdb_rating: imdbData.rating,
-        casts: credits.cast.slice(0, 10),
+        casts: credits.cast.slice(0, 9),
         crews: credits.crew.filter((crew: any) => crew.job === 'Director'),
         trailer: trailer
           ? {
