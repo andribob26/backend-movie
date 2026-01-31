@@ -140,6 +140,7 @@ export class VideosService {
           ...(dataVideo?.dataValues ?? { prefix: null, sprites: null }),
           byseSlug: dataMovie?.dataValues?.byseSlug ?? null,
           hydraxSlug: dataMovie?.dataValues?.hydraxSlug ?? null,
+          type: dataMovie?.dataValues.type,
         },
       };
     } catch (error) {
@@ -164,6 +165,7 @@ export class VideosService {
           ...(dataVideo?.dataValues ?? { prefix: null, sprites: null }),
           byseSlug: dataMovie?.dataValues?.byseSlug ?? null,
           hydraxSlug: dataMovie?.dataValues?.hydraxSlug ?? null,
+          type: dataMovie?.dataValues.type,
         },
       };
     } catch (error) {
