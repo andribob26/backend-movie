@@ -29,6 +29,14 @@ export class Episode extends Model<
   @Column(DataType.UUID)
   declare id: string;
 
+  @AllowNull(false)
+  @Column({ type: DataType.INTEGER, unique: true })
+  tmdbId: number;
+
+  @AllowNull(true)
+  @Column({ type: DataType.STRING, unique: true })
+  imdbId: string | null;
+
   @ForeignKey(() => Season)
   @AllowNull(false)
   @Column(DataType.UUID)
@@ -41,6 +49,14 @@ export class Episode extends Model<
   @Column(DataType.INTEGER)
   episodeNumber: number; // 1, 2, 3, ...
 
+  @AllowNull(true)
+  @Column({ type: DataType.STRING, unique: true })
+  byseSlug: string | null;
+
+  @AllowNull(true)
+  @Column({ type: DataType.STRING, unique: true })
+  hydraxSlug: string | null;
+
   @AllowNull(false)
   @Column(DataType.STRING)
   title: string;
@@ -50,16 +66,8 @@ export class Episode extends Model<
   synopsis: string | null;
 
   @AllowNull(true)
-  @Column(DataType.STRING)
-  duration: string | null;
-
-  @ForeignKey(() => Video)
-  @AllowNull(true)
-  @Column(DataType.UUID)
-  videoId: string | null;
-
-  @BelongsTo(() => Video)
-  video: Video;
+  @Column(DataType.INTEGER)
+  duration: number | null;
 
   @AllowNull(true)
   @Column(DataType.STRING)
@@ -78,6 +86,10 @@ export class Episode extends Model<
 
   @HasMany(() => Subtitle)
   subtitles: Subtitle[];
+
+  @AllowNull(true)
+  @Column(DataType.DATE)
+  airedAt: Date | null;
 
   @Column(DataType.DATE)
   declare createdAt: Date;

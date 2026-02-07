@@ -145,7 +145,9 @@ export class MoviesService {
   }): Promise<PaginationResponse<Movie>> {
     const { page, limit, search, orderBy, orderDirection } = data;
 
-    const where: any = {};
+    const where: any = {
+      type: 'movie',
+    };
 
     if (search && search.trim() !== '') {
       where.title = {
@@ -625,6 +627,7 @@ export class MoviesService {
           releasedAt: data.releasedAt,
           director: data.director,
           casts: data.casts,
+          type: 'movie',
         } as InferCreationAttributes<Movie>,
         { transaction },
       );
@@ -673,6 +676,24 @@ export class MoviesService {
       }
 
       await transaction.commit();
+
+      try {
+        const res = await fetch('http://localhost:4000/api/revalidate/movie', {
+          method: 'POST',
+        });
+
+        if (!res.ok) {
+          console.error('❌ Revalidate failed with status:', res.status);
+        } else {
+          console.log('✅ Revalidate triggered for /movie');
+        }
+      } catch (err) {
+        if (err instanceof Error) {
+          console.error('🔥 Error triggering revalidate:', err.message);
+        } else {
+          console.error('🔥 Error triggering revalidate:', err);
+        }
+      }
       return { message: `${NAME} created successfully`, data: movie };
     } catch (error) {
       await transaction.rollback();
@@ -748,6 +769,7 @@ export class MoviesService {
           releasedAt: data.releasedAt,
           director: data.director,
           casts: data.casts,
+          type: 'movie',
         },
         { transaction },
       );
@@ -832,6 +854,23 @@ export class MoviesService {
       }
 
       await transaction.commit();
+      try {
+        const res = await fetch('http://localhost:4000/api/revalidate/movie', {
+          method: 'POST',
+        });
+
+        if (!res.ok) {
+          console.error('❌ Revalidate failed with status:', res.status);
+        } else {
+          console.log('✅ Revalidate triggered for /movie');
+        }
+      } catch (err) {
+        if (err instanceof Error) {
+          console.error('🔥 Error triggering revalidate:', err.message);
+        } else {
+          console.error('🔥 Error triggering revalidate:', err);
+        }
+      }
       return { message: `${NAME} updated successfully`, data: movie };
     } catch (error) {
       await transaction.rollback();
@@ -869,16 +908,8 @@ export class MoviesService {
     }
 
     const genreIds = mainMovie.dataValues.genres?.map((g) => g.id) || [];
-    // const personIds =
-    //   mainMovie.dataValues.persons?.flatMap((p) => {
-    //     const isDirector = p.dataValues.position === 'Director';
-    //     if (isDirector) {
-    //       return [p.id];
-    //     }
-    //     return [];
-    //   }) || [];
-
     const countryId = mainMovie.dataValues.countryId || null;
+    const mainDirectorTmdbId = mainMovie.dataValues.director?.tmdbId || null;
 
     let titleWords: string[] = [];
 
@@ -891,7 +922,7 @@ export class MoviesService {
         .trim()
         .split(/\s+/)
         .map(this.normalizeTitleWord)
-        .filter((word) => word.length > 2) // buang kata terlalu pendek
+        .filter((word) => word.length > 2)
         .slice(0, 5);
     } else {
       console.warn(`Film ID ${movieId} tidak punya title valid`);
@@ -903,12 +934,10 @@ export class MoviesService {
 
     const orConditions: any[] = [];
 
-    // Prioritas tinggi: judul mirip
     if (titleConditions.length > 0) {
       orConditions.push({ [Op.or]: titleConditions });
     }
 
-    // Prioritas 2: genre sama (pakai subquery)
     if (genreIds.length > 0) {
       orConditions.push(
         Sequelize.where(
@@ -924,23 +953,6 @@ export class MoviesService {
       );
     }
 
-    // Prioritas 3: person sama (aktor/director)
-    // if (personIds.length > 0) {
-    //   orConditions.push(
-    //     Sequelize.where(
-    //       Sequelize.literal(`(
-    //       SELECT COUNT(*)
-    //       FROM "characters"
-    //       WHERE "movie_id" = "Movie"."id"
-    //       AND "person_id" IN (${personIds.map((id) => `'${id}'`).join(',')})
-    //     )`),
-    //       Op.gt,
-    //       0,
-    //     ),
-    //   );
-    // }
-
-    // Prioritas rendah: country + tahun (opsional, hanya kalau keduanya ada)
     let minYear: number | undefined;
     let maxYear: number | undefined;
 
@@ -975,8 +987,6 @@ export class MoviesService {
       releasedAt: { [Op.lte]: new Date() },
     };
 
-    console.log(genreIds, 'akjdkadhkjahjdakdaksdhkjaksdhkaksd');
-
     if (orConditions.length > 0) {
       where[Op.or] = orConditions;
     } else {
@@ -991,55 +1001,51 @@ export class MoviesService {
       attributes: this.opt.attributes,
       include: this.opt.include,
       order: [
-        // Judul mirip skor 1
+        // Prioritas 1: Title match
         [
           Sequelize.literal(
             titleConditions.length > 0
-              ? `CASE WHEN ${titleConditions.map((_, i) => `title ILIKE '%${titleWords[i]}%'`).join(' OR ')} THEN 1 ELSE 5 END`
+              ? `CASE WHEN ${titleConditions
+                  .map((_, i) => `title ILIKE '%${titleWords[i]}%'`)
+                  .join(' OR ')} THEN 1 ELSE 5 END`
               : '5',
           ),
           'ASC',
         ],
 
-        // Genre skor 2
+        // Prioritas 2: Director match
+        [
+          Sequelize.literal(
+            mainDirectorTmdbId
+              ? `CASE WHEN "Movie"."director"->>'tmdbId' = '${mainDirectorTmdbId}' THEN 2 ELSE 6 END`
+              : '6',
+          ),
+          'ASC',
+        ],
+
+        // Prioritas 3: Genre match
         [
           Sequelize.literal(
             `CASE WHEN EXISTS (
-            SELECT 1 FROM "movies_genres" mg 
-            INNER JOIN "genres" g ON mg."genre_id" = g."id" 
-            WHERE mg."movie_id" = "Movie"."id" 
-            AND g."id" IN (${genreIds.length > 0 ? genreIds.map((id) => `'${id}'`).join(',') : 'NULL'})
-          ) THEN 2 ELSE 5 END`,
+        SELECT 1 FROM "movies_genres" mg
+        WHERE mg."movie_id" = "Movie"."id"
+        AND mg."genre_id" IN (${genreIds.length > 0 ? genreIds.map((id) => `'${id}'`).join(',') : 'NULL'})
+      ) THEN 3 ELSE 7 END`,
           ),
           'ASC',
         ],
 
-        // Person skor 3
-        // [
-        //   Sequelize.literal(
-        //     `CASE WHEN EXISTS (
-        //     SELECT 1 FROM "characters" c
-        //     WHERE c."movie_id" = "Movie"."id"
-        //     AND c."person_id" IN (${personIds.length > 0 ? personIds.map((id) => `'${id}'`).join(',') : 'NULL'})
-        //   ) THEN 3 ELSE 5 END`,
-        //   ),
-        //   'ASC',
-        // ],
-
-        // Skor 4: punya negara yang sama DAN tahun mirip
+        // Prioritas 4: Country & year
         [
           Sequelize.literal(
             minYear !== undefined && maxYear !== undefined && countryId
-              ? `CASE WHEN (
-          "Movie"."country_id" = '${countryId}'
-          AND "Movie"."year_of_release" BETWEEN ${minYear} AND ${maxYear}
-        ) THEN 4 ELSE 10 END`
-              : '10',
+              ? `CASE WHEN "Movie"."country_id" = '${countryId}' AND "Movie"."year_of_release" BETWEEN ${minYear} AND ${maxYear} THEN 4 ELSE 8 END`
+              : '8',
           ),
           'ASC',
         ],
 
-        // ['popularityScore', 'DESC'],
+        // Fallback popular/recent
         ['releasedAt', 'DESC'],
         ['createdAt', 'DESC'],
       ],

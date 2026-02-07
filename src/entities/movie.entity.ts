@@ -159,6 +159,10 @@ export class Movie extends Model<
   director: any | null;
 
   @AllowNull(true)
+  @Column(DataType.JSONB)
+  creator: any | null;
+
+  @AllowNull(true)
   @Column(DataType.DATE)
   releasedAt: Date | null;
 

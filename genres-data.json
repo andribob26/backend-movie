@@ -74,5 +74,29 @@
     {
         "tmdbId": 37,
         "name": "Western"
+    },
+    {
+        "tmdbId": 10768,
+        "name": "Politics"
+    },
+    {
+        "tmdbId": 10762,
+        "name": "Kids"
+    },
+    {
+        "tmdbId": 10763,
+        "name": "News"
+    },
+    {
+        "tmdbId": 10764,
+        "name": "Reality"
+    },
+    {
+        "tmdbId": 10766,
+        "name": "Soap"
+    },
+    {
+        "tmdbId": 10767,
+        "name": "Talk"
     }
 ]

@@ -37,8 +37,12 @@ export class Season extends Model<
   movie: Movie;
 
   @AllowNull(false)
-  @Column(DataType.INTEGER)
+  @Column({ type: DataType.INTEGER, unique: true })
   seasonNumber: number; // 1, 2, 3, ...
+
+  @AllowNull(true)
+  @Column(DataType.STRING)
+  tmdbPosterUrl: string | null;
 
   @AllowNull(true)
   @Column(DataType.STRING)
@@ -51,6 +55,10 @@ export class Season extends Model<
 
   @HasMany(() => Episode)
   episodes: Episode[];
+
+  @AllowNull(true)
+  @Column(DataType.DATE)
+  airedAt: Date | null;
 
   @Column(DataType.DATE)
   declare createdAt: Date;
