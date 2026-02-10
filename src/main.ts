@@ -5,7 +5,7 @@ import { TransformInterceptor } from './commons/interceptors/transform.intercept
 import { HttpExceptionFilter } from './commons/filters/http-exception.filter';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import * as express from 'express'; // ✅ Import express
+import * as express from 'express'; // Import express
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 async function bootstrap() {
