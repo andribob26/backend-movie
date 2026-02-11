@@ -27,6 +27,8 @@ export class SeasonsService {
       'title',
       'totalEpisodes',
       'airedAt',
+      'updatedAt',
+      'createdAt',
     ],
     include: [],
   };

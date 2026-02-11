@@ -22,6 +22,7 @@ import { BullBoardModule } from '@bull-board/nestjs';
 import { ExpressAdapter } from '@bull-board/express';
 import { TvSeriesModule } from './tv-series/tv-series.module';
 import { SeasonsModule } from './seasons/seasons.module';
+import { EpisodesModule } from './episodes/episodes.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { SeasonsModule } from './seasons/seasons.module';
     DailyViewsModule,
     TvSeriesModule,
     SeasonsModule,
+    EpisodesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

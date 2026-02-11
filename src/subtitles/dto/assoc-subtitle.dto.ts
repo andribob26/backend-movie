@@ -1,10 +1,13 @@
 import { IsString, IsOptional, IsUUID } from 'class-validator';
 
 export class AssocSubtitleDto {
-  
   @IsOptional()
   @IsUUID()
   movieId?: string | null;
+
+  @IsOptional()
+  @IsUUID()
+  episodeId?: string | null;
 
   @IsString()
   language: string;
