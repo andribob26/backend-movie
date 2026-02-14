@@ -70,10 +70,11 @@ export class EpisodesService {
     page?: number;
     limit?: number;
     search: string;
+    seasonId?: string;
     orderBy: string;
     orderDirection: 'ASC' | 'DESC';
   }): Promise<PaginationResponse<Episode>> {
-    const { page, limit, search, orderBy, orderDirection } = data;
+    const { page, limit, search, seasonId, orderBy, orderDirection } = data;
 
     const where: any = {};
 
@@ -83,8 +84,13 @@ export class EpisodesService {
       };
     }
 
+    if (seasonId) {
+      where.seasonId = seasonId;
+    }
+
     const orderByMap: Record<string, string> = {
       title: 'title',
+      episodeNumber: 'episodeNumber',
       airedAt: 'airedAt',
       createdAt: 'createdAt',
       updatedAt: 'updatedAt',
@@ -130,20 +136,22 @@ export class EpisodesService {
     try {
       // ====== VALIDASI FOREIGN KEY ======
       if (data.seasonId) {
-        const country = await this.seasonModel.findByPk(data.seasonId, {
+        const season = await this.seasonModel.findByPk(data.seasonId, {
           transaction,
         });
-        if (!country) throw new NotFoundException('Season not found');
+        if (!season) throw new NotFoundException('Season not found');
       }
 
       // ====== CREATE MOVIE ======
       const episode = await this.episodeModel.create(
         {
+          seasonId: data.seasonId,
           tmdbId: data.tmdbId,
           imdbId: data.imdbId,
           byseSlug: data.byseSlug,
           hydraxSlug: data.hydraxSlug,
           thumbnailUrl: data.thumbnailUrl,
+          episodeNumber: data.episodeNumber,
           title: data.title,
           synopsis: data.synopsis,
           duration: data.duration,
@@ -158,10 +166,12 @@ export class EpisodesService {
           transaction,
         });
 
+        console.log(totalEpisodes, 'vvvv');
+
         await this.seasonModel.update(
           { totalEpisodes: totalEpisodes },
           {
-            where: { id: episode.dataValues.id },
+            where: { id: episode.dataValues.seasonId },
             transaction,
           },
         );

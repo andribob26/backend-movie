@@ -46,7 +46,7 @@ export class Episode extends Model<
   season: Season;
 
   @AllowNull(false)
-  @Column({ type: DataType.INTEGER, unique: true })
+  @Column(DataType.INTEGER)
   episodeNumber: number; // 1, 2, 3, ...
 
   @AllowNull(true)

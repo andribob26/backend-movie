@@ -25,6 +25,7 @@ export class EpisodesController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search = '',
+    @Query('seasonId') seasonId = '',
     @Query('orderBy') orderBy = 'createdAt',
     @Query('orderDirection') orderDirection: 'ASC' | 'DESC' = 'DESC',
   ) {
@@ -53,6 +54,7 @@ export class EpisodesController {
       page: parsedPage,
       limit: parsedLimit,
       search,
+      seasonId: seasonId || undefined,
       orderBy,
       orderDirection,
     });
