@@ -67,6 +67,19 @@ export class EpisodesController {
     });
   }
 
+  @Get('seriesId/:seriesId/season/:seasonNumber/episode/:episodeNumber')
+  async findOne(
+    @Param('seriesId') seriesId: string,
+    @Param('seasonNumber') seasonNumber: string,
+    @Param('episodeNumber') episodeNumber: string,
+  ) {
+    return await this.episodesService.findOne({
+      seriesId,
+      seasonNumber,
+      episodeNumber,
+    });
+  }
+  
   @Post()
   async create(@Body() body: CreateEpisodeDto) {
     return await this.episodesService.create(body);

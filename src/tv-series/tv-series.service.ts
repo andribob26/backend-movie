@@ -62,7 +62,7 @@ export class TvSeriesService {
       'createdAt',
       'view7',
       'type',
-      'director',
+      'creator',
       'casts',
       'isPublish',
     ],
@@ -161,6 +161,27 @@ export class TvSeriesService {
       limit: limit ?? count,
       lastPage: limit ? Math.ceil(count / limit) : 1,
     };
+  }
+
+  async findOne(data: { slug: string }): Promise<BaseResponse<Movie>> {
+    try {
+      const dataSeries = await this.movieModel.findOne({
+        where: { slug: data.slug },
+        attributes: this.opt.attributes,
+        include: this.opt.include,
+      });
+
+      if (!dataSeries) {
+        throw new NotFoundException(`${NAME} with slug ${data.slug} not found`);
+      }
+
+      return {
+        message: `${NAME} fetched successfully`,
+        data: dataSeries,
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   async create(data: CreateTvSeriesDto): Promise<BaseResponse<Movie>> {

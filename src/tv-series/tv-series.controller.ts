@@ -65,6 +65,11 @@ export class TvSeriesController {
     });
   }
 
+  @Get(':slug')
+  async findOne(@Param('slug') slug: string) {
+    return await this.tvSeriesService.findOne({ slug });
+  }
+
   @Post()
   async create(@Body() body: CreateTvSeriesDto) {
     return await this.tvSeriesService.create(body);

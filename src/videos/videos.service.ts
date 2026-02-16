@@ -7,6 +7,8 @@ import { BaseResponse } from 'src/commons/interfaces/base-response.interface';
 import { ConfigService } from '@nestjs/config';
 import { sign } from 'jsonwebtoken';
 import { Movie } from 'src/entities/movie.entity';
+import { Episode } from 'src/entities/episode.entity';
+import { Season } from 'src/entities/season.entity';
 
 const NAME = 'Video';
 
@@ -17,6 +19,10 @@ export class VideosService {
     private readonly videoModel: typeof Video,
     @InjectModel(Movie)
     private readonly movieModel: typeof Movie,
+    @InjectModel(Season)
+    private readonly seasonModel: typeof Season,
+    @InjectModel(Episode)
+    private readonly episodeModel: typeof Episode,
     private readonly configService: ConfigService,
   ) {}
   async findAll(data: {
@@ -148,12 +154,43 @@ export class VideosService {
     }
   }
 
-  async findOneByIdIMDB(data: { imdbId: string }): Promise<BaseResponse<any>> {
+  async findOneByIdIMDB(data: {
+    imdbId: string;
+    type?: string;
+    seasonNumber?: number;
+    episodeNumber?: number;
+  }): Promise<BaseResponse<any>> {
     try {
+      let byseSlug: string | null = null;
+      let hydraxSlug: string | null = null;
       const dataMovie = await this.movieModel.findOne({
         where: { imdbId: data.imdbId },
-        attributes: ['hydraxSlug', 'byseSlug', 'type'],
+        attributes: ['id', 'hydraxSlug', 'byseSlug', 'type'],
       });
+
+      if (data.type === 'movie') {
+        byseSlug = dataMovie?.dataValues?.byseSlug ?? null;
+        hydraxSlug = dataMovie?.dataValues?.hydraxSlug ?? null;
+      } else {
+        const dataSeason = await this.seasonModel.findOne({
+          where: {
+            movieId: dataMovie?.dataValues.id,
+            seasonNumber: data.seasonNumber,
+          },
+          attributes: ['id'],
+        });
+        const dataEpisode = await this.episodeModel.findOne({
+          where: {
+            seasonId: dataSeason?.dataValues.id,
+            episodeNumber: data.episodeNumber,
+          },
+          attributes: ['hydraxSlug', 'byseSlug'],
+        });
+
+        byseSlug = dataEpisode?.dataValues?.byseSlug ?? null;
+        hydraxSlug = dataEpisode?.dataValues?.hydraxSlug ?? null;
+      }
+
       const dataVideo = await this.videoModel.findOne({
         where: { imdbId: data.imdbId },
         attributes: ['prefix', 'sprites'],
@@ -163,8 +200,8 @@ export class VideosService {
         message: `${NAME} fetched successfully`,
         data: {
           ...(dataVideo?.dataValues ?? { prefix: null, sprites: null }),
-          byseSlug: dataMovie?.dataValues?.byseSlug ?? null,
-          hydraxSlug: dataMovie?.dataValues?.hydraxSlug ?? null,
+          byseSlug: byseSlug,
+          hydraxSlug: hydraxSlug,
           type: dataMovie?.dataValues.type,
         },
       };

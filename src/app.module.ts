@@ -23,6 +23,7 @@ import { ExpressAdapter } from '@bull-board/express';
 import { TvSeriesModule } from './tv-series/tv-series.module';
 import { SeasonsModule } from './seasons/seasons.module';
 import { EpisodesModule } from './episodes/episodes.module';
+import { MediaModule } from './media/media.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { EpisodesModule } from './episodes/episodes.module';
     TvSeriesModule,
     SeasonsModule,
     EpisodesModule,
+    MediaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,5 +1,9 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { InferCreationAttributes, Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
@@ -128,6 +132,70 @@ export class EpisodesService {
       limit: limit ?? count,
       lastPage: limit ? Math.ceil(count / limit) : 1,
     };
+  }
+
+  async findOne(data: {
+    seriesId: string;
+    seasonNumber: string;
+    episodeNumber: string;
+  }): Promise<BaseResponse<Episode>> {
+    try {
+      if (!data.seriesId || !data.seasonNumber || !data.episodeNumber) {
+        throw new BadRequestException(
+          'seriesId, seasonNumber, dan episodeNumber wajib diisi',
+        );
+      }
+
+      const seasonNum = Number(data.seasonNumber);
+      const episodeNum = Number(data.episodeNumber);
+
+      if (
+        isNaN(seasonNum) ||
+        isNaN(episodeNum) ||
+        seasonNum <= 0 ||
+        episodeNum <= 0
+      ) {
+        throw new BadRequestException(
+          'Season dan episode harus berupa angka positif',
+        );
+      }
+      const dataSeason = await this.seasonModel.findOne({
+        where: {
+          movieId: data.seriesId,
+          seasonNumber: seasonNum,
+        },
+        attributes: ['id', 'seasonNumber'],
+        include: [],
+      });
+
+      if (!dataSeason) {
+        throw new NotFoundException(
+          `Season ${seasonNum} untuk series ${data.seriesId} tidak ditemukan`,
+        );
+      }
+
+      const dataEpisode = await this.episodeModel.findOne({
+        where: {
+          seasonId: dataSeason?.dataValues.id,
+          episodeNumber: episodeNum,
+        },
+        attributes: this.opt.attributes,
+        include: this.opt.include,
+      });
+
+      if (!dataEpisode) {
+        throw new NotFoundException(
+          `${NAME} with series episode ${data.seriesId} not found`,
+        );
+      }
+
+      return {
+        message: `${NAME} fetched successfully`,
+        data: dataEpisode,
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   async create(data: CreateEpisodeDto): Promise<BaseResponse<Episode>> {
