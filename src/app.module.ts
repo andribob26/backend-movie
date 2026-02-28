@@ -24,6 +24,7 @@ import { TvSeriesModule } from './tv-series/tv-series.module';
 import { SeasonsModule } from './seasons/seasons.module';
 import { EpisodesModule } from './episodes/episodes.module';
 import { MediaModule } from './media/media.module';
+import { FeaturedMoviesModule } from './featured-movies/featured-movies.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { MediaModule } from './media/media.module';
     SeasonsModule,
     EpisodesModule,
     MediaModule,
+    FeaturedMoviesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

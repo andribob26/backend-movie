@@ -35,7 +35,7 @@ export class FeaturedMovie extends Model<
   movie: Movie;
 
   @AllowNull(false)
-  @Column(DataType.INTEGER)
+  @Column({ type: DataType.INTEGER, unique: true })
   position: number; // 1 = paling atas, 2, dst (per section)
 
   @Column(DataType.DATE)

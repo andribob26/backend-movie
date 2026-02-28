@@ -69,8 +69,43 @@ export class VideosController {
   async findOneByIdTMDB(
     @Param('tmdbId') tmdbId: number,
     @Query('type') type?: string,
+    @Query('seasonNumber') seasonNumber?: string,
+    @Query('episodeNumber') episodeNumber?: string,
   ) {
-    return await this.videosService.findOneByIdTMDB({ tmdbId });
+    let defaultType: string = 'movie';
+    if (type !== undefined) {
+      const t = type.toLowerCase();
+      if (t !== 'movie' && t !== 'series') {
+        throw new BadRequestException(
+          `Invalid type parameter. Must be "movie" or "series", got "${type}"`,
+        );
+      }
+      defaultType = t;
+    }
+
+    let parsedSeasonNumber: number | undefined;
+    let parsedEpisodeNumber: number | undefined;
+
+    if (seasonNumber !== undefined) {
+      parsedSeasonNumber = parseInt(seasonNumber, 10);
+      if (isNaN(parsedSeasonNumber) || parsedSeasonNumber < 1) {
+        throw new BadRequestException('Invalid season number parameter');
+      }
+    }
+
+    if (episodeNumber !== undefined) {
+      parsedEpisodeNumber = parseInt(episodeNumber, 10);
+      if (isNaN(parsedEpisodeNumber) || parsedEpisodeNumber < 1) {
+        throw new BadRequestException('Invalid episode number parameter');
+      }
+    }
+
+    return await this.videosService.findOneByIdTMDB({
+      tmdbId,
+      type: defaultType,
+      seasonNumber: parsedSeasonNumber,
+      episodeNumber: parsedEpisodeNumber,
+    });
   }
 
   @Get('imdb/:imdbId')

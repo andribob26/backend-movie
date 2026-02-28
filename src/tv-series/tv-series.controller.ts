@@ -86,7 +86,7 @@ export class TvSeriesController {
   ) {
     const parsedSeasonNumber = parseInt(seasonNumber, 10);
 
-    if (isNaN(parsedSeasonNumber) || parsedSeasonNumber < 1) {
+    if (isNaN(parsedSeasonNumber) || parsedSeasonNumber < 0) {
       throw new BadRequestException('Invalid page parameter');
     }
 
@@ -104,7 +104,7 @@ export class TvSeriesController {
     const parsedSeasonNumber = parseInt(seasonNumber, 10);
     const parsedEpisodeNumber = parseInt(episodeNumber, 10);
 
-    if (isNaN(parsedSeasonNumber) || parsedSeasonNumber < 1) {
+    if (isNaN(parsedSeasonNumber) || parsedSeasonNumber < 0) {
       throw new BadRequestException('Invalid season number parameter');
     }
 

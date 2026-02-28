@@ -1,6 +1,6 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/sequelize';
+import { InjectConnection, InjectModel } from '@nestjs/sequelize';
 import { Op, Sequelize } from 'sequelize';
 import { BaseResponse } from 'src/commons/interfaces/base-response.interface';
 import { PaginationResponse } from 'src/commons/interfaces/pagination-response.interface';
@@ -22,6 +22,8 @@ export class MediaService {
   constructor(
     @InjectModel(Movie)
     private readonly movieModel: typeof Movie,
+    @InjectConnection()
+    private sequelize: Sequelize,
   ) {}
 
   private opt = {
@@ -137,6 +139,160 @@ export class MediaService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async findAll(data: {
+    page?: number;
+    limit?: number;
+    search: string;
+    orderBy: string;
+    orderDirection: 'ASC' | 'DESC';
+    genres?: string[];
+    cast?: string;
+    director?: string;
+    creator?: string;
+  }): Promise<PaginationResponse<Movie>> {
+    const { page, limit, search, orderBy, orderDirection, genres = [] } = data;
+
+    const trimmedSearch = (search || '').trim();
+
+    const where: any = {};
+
+    if (trimmedSearch !== '') {
+      const words = trimmedSearch.split(/\s+/).filter(Boolean);
+      const conditions: any[] = [];
+
+      words.forEach((word) => {
+        const num = parseInt(word, 10);
+        if (!isNaN(num) && word === num.toString()) {
+          // Anggap ini tahun → ubah jadi string agar match tipe varchar
+          conditions.push({ yearOfRelease: num.toString() });
+        } else {
+          // Bagian title
+          conditions.push({
+            title: { [Op.iLike]: `%${word}%` },
+          });
+        }
+      });
+
+      if (conditions.length > 0) {
+        // AND antar semua kata (semua harus cocok)
+        where[Op.and] = conditions;
+      } else {
+        where.title = { [Op.iLike]: `%${trimmedSearch}%` };
+      }
+    }
+
+    // Filter genre AND pakai subquery (tidak mempengaruhi load genres)
+    if (genres.length > 0) {
+      const trimmedGenres = genres.map((g) => g.trim()).filter(Boolean);
+      if (trimmedGenres.length > 0) {
+        const escapedGenres = trimmedGenres
+          .map((g) => this.sequelize.escape(g.toLowerCase()))
+          .join(', ');
+
+        const subQuery = `
+        SELECT "movie_id"
+        FROM "movies_genres"
+        INNER JOIN "genres" ON "movies_genres"."genre_id" = "genres"."id"
+        WHERE LOWER("genres"."name") IN (${escapedGenres})
+        GROUP BY "movie_id"
+        HAVING COUNT(DISTINCT LOWER("genres"."name")) = ${trimmedGenres.length}
+      `.trim();
+
+        where.id = {
+          [Op.in]: Sequelize.literal(`(${subQuery})`),
+        };
+      }
+    }
+
+    let replacements: Record<string, any> = {};
+
+    if (data.cast && data.cast.trim() !== '') {
+      const castName = data.cast.trim();
+      where[Op.and] = where[Op.and] || [];
+      where[Op.and].push(
+        Sequelize.where(
+          Sequelize.fn(
+            'EXISTS',
+            Sequelize.literal(`
+          SELECT 1
+          FROM jsonb_array_elements("Movie"."casts") AS elem
+          WHERE LOWER(elem->>'name') LIKE LOWER(CONCAT('%', :castName, '%'))
+        `),
+          ),
+          true,
+        ),
+      );
+      replacements.castName = castName;
+    }
+
+    if (data.director && data.director.trim() !== '') {
+      const directorName = data.director.trim();
+
+      // Cara paling clean & direkomendasikan di Sequelize
+      where.director = {
+        name: {
+          [Op.iLike]: `%${directorName}%`,
+        },
+      };
+    }
+
+    if (data.creator && data.creator.trim() !== '') {
+      const creatorName = data.creator.trim();
+
+      // Cara paling clean & direkomendasikan di Sequelize
+      where.creator = {
+        name: {
+          [Op.iLike]: `%${creatorName}%`,
+        },
+      };
+    }
+
+    const includeOptions = [...this.opt.include]; // genres dari opt saja (tanpa push tambahan)
+
+    const orderByMap: Record<string, string> = {
+      title: 'title',
+      releasedAt: 'releasedAt',
+      createdAt: 'createdAt',
+      updatedAt: 'updatedAt',
+    };
+
+    const orderField = orderByMap[orderBy] ?? 'createdAt';
+
+    const offset =
+      page !== undefined && limit !== undefined
+        ? (page - 1) * limit
+        : undefined;
+
+    const queryOptions: any = {
+      where,
+      attributes: this.opt.attributes,
+      include: includeOptions,
+      order: [[orderField, orderDirection]],
+    };
+
+    if (offset !== undefined && limit !== undefined) {
+      queryOptions.offset = offset;
+      queryOptions.limit = limit;
+    }
+
+    const { rows, count } = await this.movieModel.findAndCountAll({
+      ...queryOptions,
+      distinct: true,
+      replacements:
+        Object.keys(replacements).length > 0 ? replacements : undefined,
+      logging: console.log,
+    });
+
+    return {
+      message: `${NAME} fetched successfully`,
+      data: rows,
+      total: count,
+      page: page ?? 1,
+      limit: limit ?? count,
+      lastPage: limit ? Math.ceil(count / limit) : 1,
+    };
   }
 
   async findRecommendations(data: {

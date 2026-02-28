@@ -105,7 +105,6 @@ export class VideosService {
           'prefix',
           'hlsObject',
           'thumbnail',
-          'sprites',
           'uploadedSize',
           'uploadedProgress',
           'updatedAt',
@@ -128,24 +127,54 @@ export class VideosService {
     }
   }
 
-  async findOneByIdTMDB(data: { tmdbId: number }): Promise<BaseResponse<any>> {
+  async findOneByIdTMDB(data: {
+    tmdbId: number;
+    type?: string;
+    seasonNumber?: number;
+    episodeNumber?: number;
+  }): Promise<BaseResponse<any>> {
     try {
+      let byseSlug: string | null = null;
+      let hydraxSlug: string | null = null;
       const dataMovie = await this.movieModel.findOne({
         where: { tmdbId: data.tmdbId },
-        attributes: ['hydraxSlug', 'byseSlug', 'type'],
+        attributes: ['id', 'hydraxSlug', 'byseSlug', 'type'],
       });
+
+      if (data.type === 'movie') {
+        byseSlug = dataMovie?.dataValues?.byseSlug ?? null;
+        hydraxSlug = dataMovie?.dataValues?.hydraxSlug ?? null;
+      } else {
+        const dataSeason = await this.seasonModel.findOne({
+          where: {
+            movieId: dataMovie?.dataValues.id,
+            seasonNumber: data.seasonNumber,
+          },
+          attributes: ['id'],
+        });
+        const dataEpisode = await this.episodeModel.findOne({
+          where: {
+            seasonId: dataSeason?.dataValues.id,
+            episodeNumber: data.episodeNumber,
+          },
+          attributes: ['hydraxSlug', 'byseSlug'],
+        });
+
+        byseSlug = dataEpisode?.dataValues?.byseSlug ?? null;
+        hydraxSlug = dataEpisode?.dataValues?.hydraxSlug ?? null;
+      }
+
       const dataVideo = await this.videoModel.findOne({
         where: { tmdbId: data.tmdbId },
-
-        attributes: ['prefix', 'sprites'],
+        attributes: ['prefix'],
       });
 
       return {
         message: `${NAME} fetched successfully`,
         data: {
-          ...(dataVideo?.dataValues ?? { prefix: null, sprites: null }),
-          byseSlug: dataMovie?.dataValues?.byseSlug ?? null,
-          hydraxSlug: dataMovie?.dataValues?.hydraxSlug ?? null,
+          ...(dataVideo?.dataValues ?? { prefix: null }),
+          byseSlug: byseSlug,
+          hydraxSlug: hydraxSlug,
           type: dataMovie?.dataValues.type,
         },
       };
@@ -193,13 +222,13 @@ export class VideosService {
 
       const dataVideo = await this.videoModel.findOne({
         where: { imdbId: data.imdbId },
-        attributes: ['prefix', 'sprites'],
+        attributes: ['prefix'],
       });
 
       return {
         message: `${NAME} fetched successfully`,
         data: {
-          ...(dataVideo?.dataValues ?? { prefix: null, sprites: null }),
+          ...(dataVideo?.dataValues ?? { prefix: null }),
           byseSlug: byseSlug,
           hydraxSlug: hydraxSlug,
           type: dataMovie?.dataValues.type,
