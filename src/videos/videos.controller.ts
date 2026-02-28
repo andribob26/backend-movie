@@ -165,10 +165,10 @@ export class VideosController {
     console.log('[Token] Origin/Referer:', origin);
 
     const allowedOrigins = [
-      'https://stream.nimeninja.win',
-      'https://player-hls-three.vercel.app',
+      // 'https://stream.nimeninja.win',
+      // 'https://player-hls-three.vercel.app',
+      'https://player.nimeninja.win',
       'http://localhost:4001',
-      'http://localhost:3000',
     ];
 
     const isAllowed = allowedOrigins.some((o) => origin.startsWith(o));
