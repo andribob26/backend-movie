@@ -26,53 +26,53 @@ export class DailyViewsService {
 
       const sequelize = this.movieModel.sequelize!;
 
-      // 1. Rollup view7 & view30
+      // 1. Rollup view7 & view30 (sudah benar, snake_case)
       await sequelize.query(`
       UPDATE movies m
       SET
         view7 = COALESCE((
-          SELECT SUM(dv."viewCount")
+          SELECT SUM(dv.view_count)
           FROM daily_views dv
-          WHERE dv."movieId" = m.id
-            AND dv."viewDate" >= CURRENT_DATE - INTERVAL '6 days'
-            AND dv."viewDate" <= CURRENT_DATE
+          WHERE dv.movie_id = m.id
+            AND dv.view_date >= CURRENT_DATE - INTERVAL '6 days'
+            AND dv.view_date <= CURRENT_DATE
         ), 0),
 
         view30 = COALESCE((
-          SELECT SUM(dv."viewCount")
+          SELECT SUM(dv.view_count)
           FROM daily_views dv
-          WHERE dv."movieId" = m.id
-            AND dv."viewDate" >= CURRENT_DATE - INTERVAL '29 days'
-            AND dv."viewDate" <= CURRENT_DATE
+          WHERE dv.movie_id = m.id
+            AND dv.view_date >= CURRENT_DATE - INTERVAL '29 days'
+            AND dv.view_date <= CURRENT_DATE
         ), 0),
 
-        "updatedAt" = CURRENT_TIMESTAMP
+        updated_at = CURRENT_TIMESTAMP
       WHERE EXISTS (
-        SELECT 1 FROM daily_views dv WHERE dv."movieId" = m.id
+        SELECT 1 FROM daily_views dv WHERE dv.movie_id = m.id
       );
     `);
 
-      // 2. Hitung popularityScore
+      this.logger.log('Rollup view7 & view30 selesai');
+
+      // 2. Hitung popularityScore (hanya pakai kolom yang ada)
       await sequelize.query(`
       UPDATE movies m
       SET
-        popularityScore = 
+        popularity_score = 
           (COALESCE(m.view7, 0) * 10.0) +
           (COALESCE(m.view30, 0) * 2.0) +
-          (COALESCE(m.totalLike, 0) * 1.5) +
-          (COALESCE(m.totalComment, 0) * 2.0) +
-          (LEAST(COALESCE(m.rating, 0), 10.0) * 3.0),
-        "popularityScoreLastUpdated" = CURRENT_TIMESTAMP,
-        "updatedAt" = CURRENT_TIMESTAMP
+          (COALESCE(m.total_comment, 0) * 2.0) +
+          (LEAST(COALESCE(m.imdb_rating, 0), 10.0) * 3.0),
+        popularity_score_last_updated = CURRENT_TIMESTAMP,
+        updated_at = CURRENT_TIMESTAMP
       WHERE 
         m.view7 > 0 
         OR m.view30 > 0 
-        OR m.totalLike > 0 
-        OR m.totalComment > 0 
-        OR m.rating IS NOT NULL;
+        OR m.total_comment > 0 
+        OR m.imdb_rating IS NOT NULL;
     `);
 
-      this.logger.log('Rollup view7, view30, dan popularityScore selesai!');
+      this.logger.log('Rollup popularityScore selesai!');
     } catch (error) {
       this.logger.error('Error saat rollup views & popularity', error);
     }
