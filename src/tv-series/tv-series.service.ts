@@ -239,7 +239,7 @@ export class TvSeriesService {
       await transaction.commit();
 
       try {
-        const res = await fetch('http://localhost:4000/api/revalidate/movie', {
+        const res = await fetch('https://app.flixklix.online/api/revalidate/movie', {
           method: 'POST',
         });
 

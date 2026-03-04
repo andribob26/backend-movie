@@ -264,7 +264,7 @@ export class FeaturedMoviesService {
 
       // 5. Trigger revalidate (sama seperti kode kamu, tapi bisa di-refactor jadi method terpisah)
       try {
-        const res = await fetch('http://localhost:4000/api/revalidate/movie', {
+        const res = await fetch('https://app.flixklix.online/api/revalidate/movie', {
           method: 'POST',
         });
 
